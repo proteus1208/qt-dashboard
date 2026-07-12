@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+#include "PageLayout/HeaderDockPanel.h"
 #include "PageLayout/HorizentalLayout.h"
 #include "PageLayout/VerticalDockBox.h"
 #include "env.h"
@@ -21,9 +22,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->centralwidget->setPalette(palette);
 
     horizentalLayout = new HorizentalLayout(ui->centralwidget);
-    for (int i = 0; i < 3; ++i) {
-        horizentalLayout->addWidget(new VerticalDockBox(horizentalLayout));
-    }
+    horizentalLayout->addWidget(new VerticalDockBox(horizentalLayout));
+    horizentalLayout->addWidget(new HeaderDockPanel(horizentalLayout));
+    horizentalLayout->addWidget(new VerticalDockBox(horizentalLayout));
 
     layoutHorizentalLayout();
 }

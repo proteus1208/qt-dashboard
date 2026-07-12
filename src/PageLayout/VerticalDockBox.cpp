@@ -5,6 +5,8 @@
 VerticalDockBox::VerticalDockBox(QWidget *parent)
     : QWidget(parent)
 {
+    setMinimumWidth(0);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setAttribute(Qt::WA_OpaquePaintEvent, false);
     setAutoFillBackground(false);
 }

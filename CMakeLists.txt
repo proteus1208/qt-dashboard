@@ -21,6 +21,10 @@ set(PROJECT_SOURCES
         src/PageLayout/HorizentalLayout.h
         src/PageLayout/VerticalDockBox.cpp
         src/PageLayout/VerticalDockBox.h
+        src/PageLayout/HeaderImage.cpp
+        src/PageLayout/HeaderImage.h
+        src/PageLayout/HeaderDockPanel.cpp
+        src/PageLayout/HeaderDockPanel.h
         src/env.h
 )
 
@@ -28,6 +32,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Dashboard
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        src/assets/assets.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET Dashboard APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -76,4 +81,12 @@ install(TARGETS Dashboard
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Dashboard)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+    add_custom_command(TARGET Dashboard POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:Dashboard>/assets"
+        COMMENT "Copying assets to output directory")
 endif()
