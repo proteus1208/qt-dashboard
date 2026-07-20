@@ -19,6 +19,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *e) override;
 
 private:
     void layoutHorizentalLayout();

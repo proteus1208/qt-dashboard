@@ -9,6 +9,7 @@ VerticalDockBox::VerticalDockBox(QWidget *parent)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setAttribute(Qt::WA_OpaquePaintEvent, false);
     setAutoFillBackground(false);
+    setMouseTracking(true);
 }
 
 void VerticalDockBox::paintEvent(QPaintEvent *event)

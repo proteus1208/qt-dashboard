@@ -8,6 +8,7 @@
 
 #include <QColor>
 #include <QResizeEvent>
+#include <QEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -47,5 +48,12 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
     layoutHorizentalLayout();
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *e)
+{
+    if(this == obj && e->type() == QEvent::MouseMove){
+        qDebug()<<"wer";
+    }
 }
 

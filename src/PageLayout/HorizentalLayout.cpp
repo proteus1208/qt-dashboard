@@ -21,6 +21,7 @@ void HorizentalLayout::addWidget(QWidget *widget)
         return;
     }
 
+    widget->installEventFilter(this);
     widget->setParent(this);
     m_widgets.append(widget);
     m_rates.resize(m_widgets.size());
@@ -121,11 +122,11 @@ void HorizentalLayout::paintEvent(QPaintEvent *event)
                              kBorderHoverColor);
         }
 
-        painter.fillRect(borderX - kBorderLineWidth / 2,
-                         0,
-                         kBorderLineWidth,
-                         height(),
-                         hovered ? kBorderHoverColor : kBorderColor);
+        // painter.fillRect(borderX - kBorderLineWidth / 2,
+        //                  0,
+        //                  kBorderLineWidth,
+        //                  height(),
+        //                  hovered ? kBorderHoverColor : kBorderColor);
     }
 }
 
@@ -137,6 +138,13 @@ void HorizentalLayout::resizeEvent(QResizeEvent *event)
 
 void HorizentalLayout::mouseMoveEvent(QMouseEvent *event)
 {
+    const int border = borderAtPosition(event->pos().x());
+
+    if (border != m_hoveredBorder) {
+        m_hoveredBorder = border;
+        update();
+    }
+
     if (m_draggingBorder >= 0) {
         const int deltaX = event->pos().x() - m_dragStartX;
         const int gapCount = m_widgets.size() - 1;
@@ -155,13 +163,10 @@ void HorizentalLayout::mouseMoveEvent(QMouseEvent *event)
             updateChildGeometries();
             update();
         }
-        return;
-    }
 
-    const int border = borderAtPosition(event->pos().x());
-    if (border != m_hoveredBorder) {
-        m_hoveredBorder = border;
-        update();
+        setCursor(Qt::CursorShape::ArrowCursor);
+        m_hoveredBorder = -1;
+        return;
     }
 
     if (border >= 0) {
@@ -210,4 +215,12 @@ void HorizentalLayout::leaveEvent(QEvent *event)
         unsetCursor();
         update();
     }
+}
+
+bool HorizentalLayout::eventFilter(QObject *obj, QEvent *e)
+{
+    if(m_widgets.indexOf(obj) > -1 && e->type() == QEvent::MouseMove){
+        this->mouseMoveEvent(static_cast<QMouseEvent*>(e));
+    }
+    return false;
 }

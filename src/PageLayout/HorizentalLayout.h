@@ -21,6 +21,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void leaveEvent(QEvent *event) override;
+    bool eventFilter(QObject *obj, QEvent *e) override;
 
 private:
     void updateChildGeometries();

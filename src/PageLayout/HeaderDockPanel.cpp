@@ -17,6 +17,8 @@ HeaderDockPanel::HeaderDockPanel(QWidget *parent)
     m_body->setMinimumWidth(0);
 
     layoutChildren();
+
+    setMouseTracking(true);
 }
 
 void HeaderDockPanel::layoutChildren()
