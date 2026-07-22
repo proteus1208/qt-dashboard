@@ -9,6 +9,9 @@
 #include <QColor>
 #include <QResizeEvent>
 #include <QEvent>
+#include <QPoint>
+
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -89,5 +92,15 @@ Dock* MainWindow::registerDock()
     );
     Dock *newDock = new Dock();
     newDock->show();
+
+    connect(newDock, &DockWidget::onDrag, [this](QPoint pos){
+
+    });
+    connect(newDock, &DockWidget::onMoving, [this](QPoint pos){
+
+    });
+    connect(newDock, &DockWidget::onDrop, [this](QPoint pos){
+
+    });
     return newDock;
 }

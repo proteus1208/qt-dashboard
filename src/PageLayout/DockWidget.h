@@ -80,5 +80,9 @@ private:
 
     QPropertyAnimation* m_animation = nullptr;
 
+signals:
+    void onDrag(QPoint);
+    void onMoving(QPoint);
+    void onDrop(QPoint);
 };
 

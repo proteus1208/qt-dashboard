@@ -159,18 +159,18 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                     );
 
                 m_dragging = true;
+                emit onDrag(pos);
             }
         }
 
         if (m_dragging)
         {
-            move(pos - m_dragOffset);
-            return true;
-        }
+            QPoint newPos = pos - m_dragOffset;
 
-        if (m_dragging)
-        {
-            move(pos - m_dragOffset);
+            move(newPos);
+
+            emit onMoving(e->globalPosition().toPoint());
+
             return true;
         }
     }
@@ -210,6 +210,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                 }
 
                 m_dragging = true;
+                emit onDrag(e->globalPosition().toPoint());
                 return true;
             }
         }
@@ -221,10 +222,16 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 
         if (e->button() == Qt::LeftButton)
         {
+            if (m_dragging)
+            {
+                emit onDrop(e->globalPosition().toPoint());
+            }
+
             m_dragging = false;
             m_resizing = false;
             m_pendingMaximizedDrag = false;
             m_resizeEdge = None;
+
             return true;
         }
     }
