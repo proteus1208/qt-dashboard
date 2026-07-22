@@ -23,11 +23,24 @@ MainWindow::MainWindow(QWidget *parent)
     ui->centralwidget->setPalette(palette);
 
     horizentalLayout = new HorizentalLayout(ui->centralwidget);
-    horizentalLayout->addWidget(new VerticalDockBox(horizentalLayout));
-    horizentalLayout->addWidget(new HeaderDockPanel(horizentalLayout));
-    horizentalLayout->addWidget(new VerticalDockBox(horizentalLayout));
+    VerticalDockBox *leftBox = new VerticalDockBox(horizentalLayout);
+    horizentalLayout->addWidget(leftBox);
+    registerVerticalDockBox(leftBox);
+
+    HeaderDockPanel* centerBox = new HeaderDockPanel(horizentalLayout);
+    horizentalLayout->addWidget(centerBox);
+    registerVerticalDockBox(centerBox->getDockBox());
+
+    VerticalDockBox *rightBox = new VerticalDockBox(horizentalLayout);
+    horizentalLayout->addWidget(rightBox);
+    registerVerticalDockBox(leftBox);
 
     layoutHorizentalLayout();
+    layoutHorizentalLayout();
+
+    QTimer::singleShot(0, [=](){
+        init();
+    });
 }
 
 MainWindow::~MainWindow()
@@ -44,6 +57,11 @@ void MainWindow::layoutHorizentalLayout()
     horizentalLayout->setGeometry(ui->centralwidget->rect());
 }
 
+void MainWindow::registerVerticalDockBox(VerticalDockBox *dockbox)
+{
+    this->dockboxs.append(dockbox);
+}
+
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
@@ -57,3 +75,19 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
     }
 }
 
+void MainWindow::init()
+{
+    registerDock<DockWidget>();
+}
+
+template<class Dock>
+Dock* MainWindow::registerDock()
+{
+    static_assert(
+        std::is_base_of<DockWidget, Dock>::value,
+        "Dock must inherit from DockWidget"
+    );
+    Dock *newDock = new Dock();
+    newDock->show();
+    return newDock;
+}

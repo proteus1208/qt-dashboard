@@ -12,6 +12,9 @@ class HeaderDockPanel : public QWidget
 
 public:
     explicit HeaderDockPanel(QWidget *parent = nullptr);
+    VerticalDockBox * getDockBox(){
+        return this->m_body;
+    };
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

@@ -135,6 +135,39 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 
         UpdateCursor(this, pos);
 
+        if (m_pendingMaximizedDrag)
+        {
+            if ((pos - m_pendingDragPos).manhattanLength() > 3)
+            {
+                m_pendingMaximizedDrag = false;
+
+                int newX = pos.x() - m_normalGeometry.width() / 2;
+                int newY = pos.y() - HEADER_HEIGHT / 2;
+
+                setGeometry(
+                    newX,
+                    newY,
+                    m_normalGeometry.width(),
+                    m_normalGeometry.height()
+                    );
+
+                m_maximized = false;
+
+                m_dragOffset = QPoint(
+                    width() / 2,
+                    HEADER_HEIGHT / 2
+                    );
+
+                m_dragging = true;
+            }
+        }
+
+        if (m_dragging)
+        {
+            move(pos - m_dragOffset);
+            return true;
+        }
+
         if (m_dragging)
         {
             move(pos - m_dragOffset);
@@ -150,20 +183,33 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
         {
             QPoint globalPos = e->globalPosition().toPoint();
 
-            m_resizeEdge = GetResizeEdge(globalPos);
-
-            if (m_resizeEdge != None)
+            // Resize only when not maximized
+            if (!m_maximized)
             {
-                m_resizing = true;
-                m_resizeStartPos = globalPos;
-                m_resizeStartGeometry = geometry();
-                return true;
+                m_resizeEdge = GetResizeEdge(globalPos);
+
+                if (m_resizeEdge != None)
+                {
+                    m_resizing = true;
+                    m_resizeStartPos = globalPos;
+                    m_resizeStartGeometry = geometry();
+                    return true;
+                }
             }
 
+            // Header drag
             if (obj == m_header)
             {
-                m_dragging = true;
                 m_dragOffset = globalPos - frameGeometry().topLeft();
+
+                if (m_maximized)
+                {
+                    m_pendingMaximizedDrag = true;
+                    m_pendingDragPos = globalPos;
+                    return true;
+                }
+
+                m_dragging = true;
                 return true;
             }
         }
@@ -177,6 +223,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
         {
             m_dragging = false;
             m_resizing = false;
+            m_pendingMaximizedDrag = false;
             m_resizeEdge = None;
             return true;
         }
@@ -291,13 +338,36 @@ void DockWidget::ToggleMaximize()
         if (!screen)
             screen = QApplication::primaryScreen();
 
-        setGeometry(screen->availableGeometry());
+        AnimateGeometry(screen->availableGeometry());
 
         m_maximized = true;
     }
     else
     {
-        setGeometry(m_normalGeometry);
+        AnimateGeometry(m_normalGeometry);
         m_maximized = false;
     }
+}
+
+void DockWidget::AnimateGeometry(const QRect &target)
+{
+    if (m_animation)
+    {
+        m_animation->stop();
+        delete m_animation;
+    }
+
+    m_animation = new QPropertyAnimation(this, "geometry");
+    m_animation->setDuration(200);
+    m_animation->setStartValue(geometry());
+    m_animation->setEndValue(target);
+    m_animation->setEasingCurve(QEasingCurve::OutCubic);
+
+    connect(m_animation, &QPropertyAnimation::finished, this, [this]()
+            {
+                delete m_animation;
+                m_animation = nullptr;
+            });
+
+    m_animation->start();
 }

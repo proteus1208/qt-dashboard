@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QRect>
+#include <QPropertyAnimation>
 
 class QLabel;
 
@@ -48,6 +49,8 @@ private:
     void ResizeWindow(const QPoint& pos);
     void ToggleMaximize();
 
+    void AnimateGeometry(const QRect& target);
+
 private:
     QVBoxLayout* m_rootLayout = nullptr;
 
@@ -71,4 +74,11 @@ private:
     QRect m_normalGeometry;
 
     ResizeEdge m_resizeEdge = None;
+
+    bool m_pendingMaximizedDrag = false;
+    QPoint m_pendingDragPos;
+
+    QPropertyAnimation* m_animation = nullptr;
+
 };
+
