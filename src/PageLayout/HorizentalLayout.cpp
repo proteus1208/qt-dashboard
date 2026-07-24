@@ -219,7 +219,7 @@ void HorizentalLayout::leaveEvent(QEvent *event)
 
 bool HorizentalLayout::eventFilter(QObject *obj, QEvent *e)
 {
-    if(m_widgets.indexOf(obj) > -1 && e->type() == QEvent::MouseMove){
+    if(e->type() == QEvent::MouseMove){
         this->mouseMoveEvent(static_cast<QMouseEvent*>(e));
     }
     return false;

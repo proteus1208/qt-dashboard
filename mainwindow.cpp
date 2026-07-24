@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     VerticalDockBox *rightBox = new VerticalDockBox(horizentalLayout);
     horizentalLayout->addWidget(rightBox);
-    registerVerticalDockBox(leftBox);
+    registerVerticalDockBox(rightBox);
 
     layoutHorizentalLayout();
     layoutHorizentalLayout();

@@ -13,7 +13,9 @@ HeaderDockPanel::HeaderDockPanel(QWidget *parent)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     m_header = new HeaderImage(this);
+    m_header->installEventFilter(parent);
     m_body = new VerticalDockBox(this);
+    m_body->installEventFilter(parent);
     m_body->setMinimumWidth(0);
 
     layoutChildren();
