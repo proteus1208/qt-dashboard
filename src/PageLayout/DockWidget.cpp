@@ -7,9 +7,11 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QCursor>
+#include <QTimer>
 
 constexpr int HEADER_HEIGHT = 32;
-constexpr int BORDER_WIDTH = 3;
+constexpr int BORDER_WIDTH = 1;
+constexpr int BORDER_MOUSE_AREA_WIDTH = 5;
 constexpr int INITIAL_WIDTH = 600;
 constexpr int INITIAL_HEIGHT = 400;
 constexpr int MIN_WIDTH = 200;
@@ -57,10 +59,19 @@ DockWidget::DockWidget(QWidget* parent)
 
     Init();
     InstallChildEventFilters(m_content);
+
+    QTimer::singleShot(0, [=](){
+        m_normalGeometry = this->geometry();
+    });
 }
 
 DockWidget::~DockWidget()
 {
+}
+
+VerticalDockBox *DockWidget::parentDockBox()
+{
+    return (VerticalDockBox *) this->parent();
 }
 
 void DockWidget::Init()
@@ -106,6 +117,34 @@ void DockWidget::AddWidget(QWidget* widget, int rate)
     m_currentRow->addWidget(widget, rate);
 }
 
+void DockWidget::detachFromDock(QPoint pos)
+{
+    QPoint globalPos = mapToGlobal(QPoint(0,0));
+    hide();
+    setParent(nullptr);
+    setWindowFlags( Qt::FramelessWindowHint | Qt::Window );
+    move(globalPos);
+    int newX = pos.x() - m_normalGeometry.width() / 2;
+    int newY = pos.y() - HEADER_HEIGHT / 2;
+    setGeometry(
+        newX,
+        newY,
+        m_normalGeometry.width(),
+        m_normalGeometry.height()
+    );
+
+    m_dragOffset = pos - frameGeometry().topLeft();
+    setMinimumSize( MIN_WIDTH, MIN_HEIGHT );
+    show();
+    raise();
+    activateWindow();
+}
+
+int DockWidget::minimumDockHeight() const
+{
+    return HEADER_HEIGHT + 20; // header + content minimum
+}
+
 void DockWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
@@ -149,22 +188,33 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                     newY,
                     m_normalGeometry.width(),
                     m_normalGeometry.height()
-                    );
+                );
 
                 m_maximized = false;
 
-                m_dragOffset = QPoint(
-                    width() / 2,
-                    HEADER_HEIGHT / 2
-                    );
+                if (obj == m_header)
+                {
+                    QPoint globalPos = e->globalPosition().toPoint();
+                    m_dragOffset = globalPos - frameGeometry().topLeft();
+                    emit onDrag(globalPos);
+                    return true;
+                }
 
                 m_dragging = true;
                 emit onDrag(pos);
+                QPoint currentPos = this->pos();
+                setParent(nullptr);
+                setWindowFlags(
+                    Qt::FramelessWindowHint |
+                    Qt::Window
+                );
+                move(pos - m_dragOffset);
             }
         }
 
         if (m_dragging)
         {
+            // qDebug()<<"hello";
             QPoint newPos = pos - m_dragOffset;
 
             move(newPos);
@@ -184,7 +234,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
             QPoint globalPos = e->globalPosition().toPoint();
 
             // Resize only when not maximized
-            if (!m_maximized)
+            if (!m_maximized && parent() == nullptr)
             {
                 m_resizeEdge = GetResizeEdge(globalPos);
 
@@ -206,7 +256,6 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                 {
                     m_pendingMaximizedDrag = true;
                     m_pendingDragPos = globalPos;
-                    return true;
                 }
 
                 m_dragging = true;
@@ -253,10 +302,10 @@ DockWidget::ResizeEdge DockWidget::GetResizeEdge(const QPoint& pos)
     QRect r = rect();
     QPoint local = mapFromGlobal(pos);
 
-    bool left = local.x() <= BORDER_WIDTH;
-    bool right = local.x() >= r.width() - BORDER_WIDTH;
-    bool top = local.y() <= BORDER_WIDTH;
-    bool bottom = local.y() >= r.height() - BORDER_WIDTH;
+    bool left = local.x() <= BORDER_MOUSE_AREA_WIDTH;
+    bool right = local.x() >= r.width() - BORDER_MOUSE_AREA_WIDTH;
+    bool top = local.y() <= BORDER_MOUSE_AREA_WIDTH;
+    bool bottom = local.y() >= r.height() - BORDER_MOUSE_AREA_WIDTH;
 
     if (top && left) return TopLeft;
     if (top && right) return TopRight;
@@ -272,6 +321,11 @@ DockWidget::ResizeEdge DockWidget::GetResizeEdge(const QPoint& pos)
 
 void DockWidget::UpdateCursor(QWidget* target, const QPoint& pos)
 {
+    if (parent() != nullptr || m_maximized)
+    {
+        target->unsetCursor();
+        return;
+    }
     switch (GetResizeEdge(pos))
     {
     case Left:
@@ -302,6 +356,13 @@ void DockWidget::UpdateCursor(QWidget* target, const QPoint& pos)
 
 void DockWidget::ResizeWindow(const QPoint& pos)
 {
+
+    if (parent() != nullptr || m_maximized)
+    {
+        m_resizing = false;
+        return;
+    }
+
     QRect g = m_resizeStartGeometry;
     QPoint delta = pos - m_resizeStartPos;
 

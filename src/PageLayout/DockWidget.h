@@ -9,6 +9,8 @@
 #include <QRect>
 #include <QPropertyAnimation>
 
+class VerticalDockBox;
+
 class QLabel;
 
 class DockWidget : public QWidget
@@ -19,11 +21,21 @@ public:
     explicit DockWidget(QWidget* parent = nullptr);
     ~DockWidget();
 
+    VerticalDockBox * parentDockBox();
+
     virtual void Init();
     void InstallChildEventFilters(QWidget* widget);
 
     void AddRow();
     void AddWidget(QWidget* widget, int rate = 1);
+    void detachFromDock(QPoint pos);
+
+public:
+    int minimumDockHeight() const;
+
+public:
+    void setDocked(QWidget* parent);
+    void setFloating();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
