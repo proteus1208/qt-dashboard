@@ -36,12 +36,18 @@ private:
 
 private:
 
-    QList<VerticalDockBox*> dockboxs;
+    QList<VerticalDockBox*> dockBoxes;
     void registerVerticalDockBox(VerticalDockBox *);
 
     template <class Dock>
     Dock* registerDock();
     QList<DockWidget*> docks;
 
+    DockWidget *m_draggingDock = nullptr;
+    VerticalDockBox* m_currentDockBox = nullptr;
+    VerticalDockBox* m_sourceDockBox = nullptr;
+    void startDockDrag(DockWidget* dock, QPoint pos);
+    void updateDockBoxPreview(DockWidget* dock, QPoint pos);
+    void finishDockDrag(DockWidget* dock, QPoint pos);
 };
 #endif // MAINWINDOW_H

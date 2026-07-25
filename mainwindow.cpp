@@ -62,7 +62,84 @@ void MainWindow::layoutHorizentalLayout()
 
 void MainWindow::registerVerticalDockBox(VerticalDockBox *dockbox)
 {
-    this->dockboxs.append(dockbox);
+    this->dockBoxes.append(dockbox);
+}
+
+void MainWindow::startDockDrag(DockWidget* dock, QPoint pos)
+{
+    if (!dock) return;
+
+    m_draggingDock = dock;
+
+    // Save original dock box
+    m_sourceDockBox = dock->parentDockBox();
+
+    if(m_sourceDockBox)
+    {
+        m_sourceDockBox->removeDock(dock);
+        dock->detachFromDock(pos);
+    }
+
+    m_currentDockBox = nullptr;
+}
+
+
+void MainWindow::updateDockBoxPreview( DockWidget* dock, QPoint pos) {
+    if (!dock) return;
+
+    VerticalDockBox* hitBox = nullptr;
+
+    // Find dock box under mouse
+    for (auto box : dockBoxes)
+    {
+        QRect globalRect( box->mapToGlobal(QPoint(0, 0)), box->size() );
+
+        if (globalRect.contains(pos))
+        {
+            hitBox = box;
+            break;
+        }
+    }
+
+    // Enter new dock box
+    if (hitBox && hitBox != m_currentDockBox)
+    {
+        if (m_currentDockBox)
+        {
+            m_currentDockBox->onOutDock(dock, pos);
+        }
+
+        m_currentDockBox = hitBox;
+        m_currentDockBox->onEnterDock(dock, pos);
+    }
+
+    // Move inside current dock box
+    else if (hitBox && hitBox == m_currentDockBox)
+    {
+        m_currentDockBox->onMoveDock(dock, pos);
+    }
+
+    // Leave dock boxes
+    else if (!hitBox && m_currentDockBox)
+    {
+        m_currentDockBox->onOutDock(dock, pos);
+        m_currentDockBox = nullptr;
+    }
+}
+
+void MainWindow::finishDockDrag( DockWidget* dock, QPoint pos) {
+    if (!dock || dock != m_draggingDock)
+        return;
+
+    // Dropped on a dock box
+    if (m_currentDockBox)
+    {
+        m_currentDockBox->onDropDock(dock, pos);
+    }
+    // Cleanup
+    m_currentDockBox = nullptr;
+    m_sourceDockBox = nullptr;
+    m_draggingDock = nullptr;
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -73,13 +150,12 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *e)
 {
-    if(this == obj && e->type() == QEvent::MouseMove){
-        qDebug()<<"wer";
-    }
 }
 
 void MainWindow::init()
 {
+    registerDock<DockWidget>();
+    registerDock<DockWidget>();
     registerDock<DockWidget>();
 }
 
@@ -93,14 +169,16 @@ Dock* MainWindow::registerDock()
     Dock *newDock = new Dock();
     newDock->show();
 
-    connect(newDock, &DockWidget::onDrag, [this](QPoint pos){
-
+    connect(newDock, &DockWidget::onDrag, this, [this, newDock](QPoint pos) {
+        startDockDrag(newDock, pos);
     });
-    connect(newDock, &DockWidget::onMoving, [this](QPoint pos){
 
+    connect(newDock, &DockWidget::onMoving, this, [this, newDock](QPoint pos) {
+        updateDockBoxPreview(newDock, pos);
     });
-    connect(newDock, &DockWidget::onDrop, [this](QPoint pos){
 
+    connect(newDock, &DockWidget::onDrop, this, [this, newDock](QPoint pos) {
+        finishDockDrag(newDock, pos);
     });
     return newDock;
 }
