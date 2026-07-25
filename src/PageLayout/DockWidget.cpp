@@ -281,7 +281,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
             m_pendingMaximizedDrag = false;
             m_resizeEdge = None;
 
-            return true;
+            return false;
         }
     }
 
