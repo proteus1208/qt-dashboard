@@ -1,12 +1,17 @@
 #ifndef HORIZENTALLAYOUT_H
 #define HORIZENTALLAYOUT_H
 
-#include <QVector>
+#include <QPropertyAnimation>
 #include <QWidget>
+#include <QVector>
+
+class BorderWidget;
+class HoverWidget;
 
 class HorizentalLayout : public QWidget
 {
     Q_OBJECT
+    friend class BorderWidget;
 
 public:
     explicit HorizentalLayout(QWidget *parent = nullptr);
@@ -21,12 +26,15 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void leaveEvent(QEvent *event) override;
-    bool eventFilter(QObject *obj, QEvent *e) override;
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void updateChildGeometries();
     int borderAtPosition(int x) const;
     int borderPixelPosition(int borderIndex) const;
+    void showBorderHover(int borderIndex);
+    void hideBorderHover();
+    void onHoverAnimationFinished();
 
     static constexpr int kBorderHitWidth = 6;
     static constexpr int kBorderLineWidth = 1;
@@ -42,7 +50,10 @@ private:
     int m_hoveredBorder = -1;
     int m_draggingBorder = -1;
     int m_dragStartX = 0;
-    QVector<double> m_dragStartRates;
+
+    BorderWidget *m_borderWidget = nullptr;
+    HoverWidget *m_hoverWidget = nullptr;
+    QPropertyAnimation *m_hoverAnimation = nullptr;
 };
 
-#endif // HORIZENTALLAYOUT_H
+#endif
