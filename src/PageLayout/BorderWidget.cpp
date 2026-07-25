@@ -5,9 +5,10 @@
 
 const QColor kBorderColor(0x3d, 0x3d, 0x3d);
 
-BorderWidget::BorderWidget(QWidget *parent, BorderRateProvider *layout)
+BorderWidget::BorderWidget(QWidget *parent, BorderRateProvider *layout, Type type)
     : QWidget(parent)
     , m_provider(layout)
+    , type(type)
 {
     setAttribute(Qt::WA_TransparentForMouseEvents);
 }
@@ -23,6 +24,13 @@ void BorderWidget::paintEvent(QPaintEvent *event)
 
     for (int i = 0; i < m_rates.size(); ++i) {
         const int x = qRound(width() * m_rates[i]);
-        painter.drawLine(x, 0, x, height());
+        switch(type){
+        case Type::Horizental:
+            painter.drawLine(x, 0, x, height());
+            break;
+        case Type::Vertical:
+            painter.drawLine(0, x, height(), x);
+            break;
+        }
     }
 }
