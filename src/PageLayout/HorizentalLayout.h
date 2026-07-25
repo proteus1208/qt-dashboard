@@ -5,10 +5,12 @@
 #include <QWidget>
 #include <QVector>
 
+#include "BorderRateProvider.h"
+
 class BorderWidget;
 class HoverWidget;
 
-class HorizentalLayout : public QWidget
+class HorizentalLayout : public QWidget, public BorderRateProvider
 {
     Q_OBJECT
     friend class BorderWidget;
@@ -18,6 +20,8 @@ public:
 
     void addWidget(QWidget *widget);
     void addWidget(QWidget &widget);
+
+    QList<double> borderRate() const override;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -39,10 +43,6 @@ private:
     static constexpr int kBorderHitWidth = 6;
     static constexpr int kBorderLineWidth = 1;
     static constexpr double kMinPaneRate = 0.05;
-
-    static const QColor kBackgroundColor;
-    static const QColor kBorderColor;
-    static const QColor kBorderHoverColor;
 
     QVector<QWidget *> m_widgets;
     QVector<double> m_rates;

@@ -3,18 +3,18 @@
 
 #include <QWidget>
 
-class HorizentalLayout;
+class BorderRateProvider;
 
 class BorderWidget : public QWidget
 {
 public:
-    explicit BorderWidget(HorizentalLayout *layout);
+    explicit BorderWidget(QWidget *parent, BorderRateProvider *layout);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    HorizentalLayout *m_layout = nullptr;
+    BorderRateProvider *m_provider = nullptr;
 };
 
 

@@ -5,6 +5,9 @@
 
 const QColor kBorderColor(0x3d, 0x3d, 0x3d);
 
+BorderWidget::BorderWidget(QWidget *parent, BorderRateProvider *layout)
+    : QWidget(parent)
+    , m_provider(layout)
 {
     setAttribute(Qt::WA_TransparentForMouseEvents);
 }
@@ -14,10 +17,12 @@ void BorderWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
 
     QPainter painter(this);
-    painter.setPen(QPen(m_layout->kBorderColor, 1));
+    painter.setPen(QPen(kBorderColor, 1));
 
-    for (int i = 0; i < m_layout->m_widgets.size() - 1; ++i) {
-        const int x = m_layout->borderPixelPosition(i);
+    QList<double> m_rates = m_provider->borderRate();
+
+    for (int i = 0; i < m_rates.size(); ++i) {
+        const int x = qRound(width() * m_rates[i]);
         painter.drawLine(x, 0, x, height());
     }
 }

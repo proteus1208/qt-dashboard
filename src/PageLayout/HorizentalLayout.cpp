@@ -15,7 +15,7 @@ HorizentalLayout::HorizentalLayout(QWidget *parent)
     setMouseTracking(true);
     setAutoFillBackground(false);
 
-    m_borderWidget = new BorderWidget(this);
+    m_borderWidget = new BorderWidget(this, this);
     m_hoverWidget = new HoverWidget(this);
 
     m_borderWidget->setGeometry(rect());
@@ -56,6 +56,14 @@ void HorizentalLayout::addWidget(QWidget *widget)
 void HorizentalLayout::addWidget(QWidget &widget)
 {
     addWidget(&widget);
+}
+
+QList<double> HorizentalLayout::borderRate() const
+{
+    QList<double> border_rate = m_rates;
+    border_rate.removeFirst();
+    border_rate.removeLast();
+    return m_rates;
 }
 
 void HorizentalLayout::updateChildGeometries()
@@ -161,6 +169,8 @@ void HorizentalLayout::mouseMoveEvent(QMouseEvent *event)
     } else {
         unsetCursor();
     }
+
+    QWidget::mousePressEvent(event);
 }
 
 void HorizentalLayout::mousePressEvent(QMouseEvent *event)
@@ -176,10 +186,10 @@ void HorizentalLayout::mousePressEvent(QMouseEvent *event)
     }
 
     m_draggingBorder = border;
-    showBorderHover(border);
     setCursor(Qt::SplitHCursor);
 
     qApp->installEventFilter(this);
+    QWidget::mousePressEvent(event);
 }
 
 void HorizentalLayout::mouseReleaseEvent(QMouseEvent *event)
@@ -190,10 +200,14 @@ void HorizentalLayout::mouseReleaseEvent(QMouseEvent *event)
 
     if (m_draggingBorder >= 0) {
         m_draggingBorder = -1;
-        hideBorderHover();
         unsetCursor();
         qApp->removeEventFilter(this);
+
+        event->accept();
+        return;
     }
+
+    QWidget::mouseReleaseEvent(event);
 }
 
 void HorizentalLayout::leaveEvent(QEvent *event)
@@ -238,44 +252,69 @@ void HorizentalLayout::hideBorderHover()
 
 bool HorizentalLayout::eventFilter(QObject *obj, QEvent *event)
 {
-    if (event->type() == QEvent::MouseMove && m_draggingBorder >= 0) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        QPoint pos = mapFromGlobal(mouseEvent->globalPosition().toPoint());
+    // Border is currently being dragged.
+    // Capture mouse movement and release globally.
+    if (m_draggingBorder >= 0) {
 
-        QMouseEvent translatedEvent(
-            QEvent::MouseMove,
-            pos,
-            mouseEvent->button(),
-            mouseEvent->buttons(),
-            mouseEvent->modifiers()
-            );
+        if (event->type() == QEvent::MouseMove) {
+            auto *mouseEvent =
+                static_cast<QMouseEvent *>(event);
 
-        mouseMoveEvent(&translatedEvent);
-        return false;
-    }
+            const QPoint pos =
+                mapFromGlobal(
+                    mouseEvent->globalPosition().toPoint()
+                    );
 
-    if (event->type() == QEvent::MouseButtonRelease && m_draggingBorder >= 0) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+            QMouseEvent translatedEvent(
+                QEvent::MouseMove,
+                pos,
+                mouseEvent->button(),
+                mouseEvent->buttons(),
+                mouseEvent->modifiers()
+                );
 
-        if (mouseEvent->button() == Qt::LeftButton) {
-            mouseReleaseEvent(mouseEvent);
-            return false;
+            mouseMoveEvent(&translatedEvent);
+
+            // We handled the event.
+            return true;
+        }
+
+        if (event->type() == QEvent::MouseButtonRelease) {
+            auto *mouseEvent =
+                static_cast<QMouseEvent *>(event);
+
+            if (mouseEvent->button() == Qt::LeftButton) {
+                mouseReleaseEvent(mouseEvent);
+
+                // We handled the event.
+                return true;
+            }
         }
     }
 
-    if (obj == m_hoverWidget || obj == m_borderWidget) {
+    // Ignore events coming from the visual overlay widgets.
+    if (obj == m_hoverWidget ||
+        obj == m_borderWidget) {
         return false;
     }
 
-    QWidget *widget = qobject_cast<QWidget *>(obj);
+    QWidget *widget =
+        qobject_cast<QWidget *>(obj);
 
     if (!widget) {
         return QWidget::eventFilter(obj, event);
     }
 
+    // Convert child-widget mouse coordinates
+    // into HorizentalLayout coordinates.
     if (event->type() == QEvent::MouseMove) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        QPoint pos = mapFromGlobal(widget->mapToGlobal(mouseEvent->pos()));
+        auto *mouseEvent =
+            static_cast<QMouseEvent *>(event);
+
+        const QPoint pos =
+            mapFromGlobal(
+                mouseEvent->globalPosition().toPoint()
+                );
 
         QMouseEvent translatedEvent(
             QEvent::MouseMove,
@@ -288,9 +327,14 @@ bool HorizentalLayout::eventFilter(QObject *obj, QEvent *event)
         mouseMoveEvent(&translatedEvent);
     }
 
-    if (event->type() == QEvent::MouseButtonPress) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        QPoint pos = mapFromGlobal(widget->mapToGlobal(mouseEvent->pos()));
+    else if (event->type() == QEvent::MouseButtonPress) {
+        auto *mouseEvent =
+            static_cast<QMouseEvent *>(event);
+
+        const QPoint pos =
+            mapFromGlobal(
+                mouseEvent->globalPosition().toPoint()
+                );
 
         QMouseEvent translatedEvent(
             QEvent::MouseButtonPress,
