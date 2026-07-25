@@ -7,9 +7,7 @@
 #include "HoverWidget.h"
 #include "BorderWidget.h"
 
-const QColor HorizentalLayout::kBackgroundColor(0x1e, 0x1e, 0x1e);
-const QColor HorizentalLayout::kBorderColor(0x3d, 0x3d, 0x3d);
-const QColor HorizentalLayout::kBorderHoverColor(0x00, 0x8c, 0xff);
+const QColor kBackgroundColor(0x1e, 0x1e, 0x1e);
 
 HorizentalLayout::HorizentalLayout(QWidget *parent)
     : QWidget(parent)

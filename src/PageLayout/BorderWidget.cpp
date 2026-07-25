@@ -3,9 +3,8 @@
 
 #include <QPainter>
 
-BorderWidget::BorderWidget(HorizentalLayout *layout)
-    : QWidget(layout)
-    , m_layout(layout)
+const QColor kBorderColor(0x3d, 0x3d, 0x3d);
+
 {
     setAttribute(Qt::WA_TransparentForMouseEvents);
 }

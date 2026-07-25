@@ -2,6 +2,8 @@
 
 #include <QPainter>
 
+const QColor kBorderHoverColor(0x00, 0x8c, 0xff);
+
 HoverWidget::HoverWidget(QWidget *parent)
     : QWidget(parent)
 {
@@ -24,7 +26,7 @@ void HoverWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
 
     QPainter painter(this);
-    QColor color(0x00, 0x8c, 0xff);
+    QColor color = kBorderHoverColor;
     color.setAlphaF(m_opacity);
-    painter.fillRect(rect(), color);
+    painter.fillRect(rect(), kBorderHoverColor);
 }
