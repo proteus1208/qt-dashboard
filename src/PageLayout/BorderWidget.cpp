@@ -23,13 +23,15 @@ void BorderWidget::paintEvent(QPaintEvent *event)
     QList<double> m_rates = m_provider->borderRate();
 
     for (int i = 0; i < m_rates.size(); ++i) {
-        const int x = qRound(width() * m_rates[i]);
+        int x;
         switch(type){
         case Type::Horizental:
+            x = m_rates[i];
             painter.drawLine(x, 0, x, height());
             break;
         case Type::Vertical:
-            painter.drawLine(0, x, height(), x);
+            x = m_rates[i];
+            painter.drawLine(0, x, width(), x);
             break;
         }
     }

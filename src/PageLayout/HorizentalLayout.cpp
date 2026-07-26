@@ -60,10 +60,11 @@ void HorizentalLayout::addWidget(QWidget &widget)
 
 QList<double> HorizentalLayout::borderRate() const
 {
-    QList<double> border_rate = m_rates;
-    border_rate.removeFirst();
-    border_rate.removeLast();
-    return m_rates;
+    QList<double> border_rate;
+    for(int i = 1, len = m_widgets.count(); i<len ; i ++){
+        border_rate<<m_widgets[i]->geometry().left();
+    }
+    return border_rate;
 }
 
 void HorizentalLayout::updateChildGeometries()

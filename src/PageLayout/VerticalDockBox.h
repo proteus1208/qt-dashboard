@@ -9,17 +9,27 @@
 
 #include "../ListAnimation.h"
 
+#include "BorderRateProvider.h"
+#include "BorderWidget.h"
+#include "HoverWidget.h"
+
 class QResizeEvent;
 class QPaintEvent;
 class QMouseEvent;
 class QEvent;
 
-class VerticalDockBox : public QWidget
+class VerticalDockBox : public QWidget, BorderRateProvider
 {
     Q_OBJECT
 
 public:
     explicit VerticalDockBox(QWidget *parent = nullptr);
+
+    VerticalDockBox(const VerticalDockBox &) = delete;
+    VerticalDockBox(VerticalDockBox &&) = delete;
+    VerticalDockBox &operator=(const VerticalDockBox &) = delete;
+    VerticalDockBox &operator=(VerticalDockBox &&) = delete;
+    QList<double> borderRate() const override;
 
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -70,6 +80,11 @@ private:
 
 private:
     QVector<DockWidget*> m_docks;
+
+private:
+    BorderWidget *m_borderWidget = nullptr;
+    HoverWidget *m_hoverWidget = nullptr;
+
     QVector<double> m_rates, m_rates_old, m_rates_target;
 
     DockWidget* m_dragDock = nullptr;
@@ -86,6 +101,11 @@ private:
     QVector<double> m_dragStartRates;
 
     ListAnimation borderAnimation;
+
+private:
+    void showBorderHover(int borderIndex);
+    void hideBorderHover();
+
 };
 
 #endif // VERTICALDOCKBOX_H

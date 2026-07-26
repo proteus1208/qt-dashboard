@@ -17,12 +17,65 @@ VerticalDockBox::VerticalDockBox(QWidget *parent)
 {
     setMouseTracking(true);
     setAutoFillBackground(false);
+
+    m_borderWidget = new BorderWidget(this, this, BorderWidget::Type::Vertical);
+    m_hoverWidget = new HoverWidget(this);
+
+    m_borderWidget->setGeometry(rect());
+    m_borderWidget->show();
+
+    m_hoverWidget->setVisible(false);
+    m_hoverWidget->setOpacity(0.0);
+
+    m_borderWidget->raise();
+    m_hoverWidget->raise();
+
     borderAnimation.setDuration(100);
-    connect(&borderAnimation, &ListAnimation::changed, [=](QList<double> value){
-        if(value.count() != m_rates.count()) return;
-        m_rates = value;
-        updateChildGeometries();
-    });
+
+    connect(
+        &borderAnimation,
+        &ListAnimation::changed,
+        this,
+        [this](QList<double> value)
+        {
+            if (value.count() != m_rates.count()) {
+                return;
+            }
+
+            m_rates = value;
+            updateChildGeometries();
+
+            // Hide static borders while rates are animating.
+            m_borderWidget->hide();
+            m_hoverWidget->hide();
+        }
+    );
+
+    connect(
+        &borderAnimation,
+        &ListAnimation::finished,
+        this,
+        [this]()
+        {
+            m_borderWidget->show();
+            m_borderWidget->raise();
+            m_borderWidget->update();
+        }
+    );
+}
+
+QList<double> VerticalDockBox::borderRate() const
+{
+    QList<double> result;
+
+    if (height() <= 0) {
+        return result;
+    }
+
+    for(int i = 0, len = m_docks.count(); i<len ; i ++){
+        result<<m_docks[i]->geometry().top();
+    }
+    return result;
 }
 
 void VerticalDockBox::insertDock(DockWidget *dock, int index)
@@ -211,6 +264,37 @@ void VerticalDockBox::restorePreview()
 
 }
 
+void VerticalDockBox::hideBorderHover()
+{
+    m_hoverWidget->setVisible(false);
+    m_hoverWidget->setOpacity(0.0);
+}
+
+void VerticalDockBox::showBorderHover(int borderIndex)
+{
+    const int borderY =
+        borderPixelPosition(borderIndex);
+
+    m_hoverWidget->setGeometry(
+        0,
+        borderY - kBorderHitWidth / 2,
+        width(),
+        kBorderHitWidth
+        );
+
+    m_hoverWidget->raise();
+
+    m_hoverWidget->setOpacity(0.0);
+    m_hoverWidget->show();
+
+    // If you have the same animation
+    // as HorizentalLayout:
+    //
+    // m_hoverAnimation->stop();
+    // m_hoverAnimation->setStartValue(0.0);
+    // m_hoverAnimation->setEndValue(1.0);
+    // m_hoverAnimation->start();
+}
 int VerticalDockBox::borderPixelPosition(int index) const
 {
     if (index < 0 || index >= m_docks.size() - 1) {
@@ -219,14 +303,13 @@ int VerticalDockBox::borderPixelPosition(int index) const
 
     int borderCount = m_docks.size() - 1;
 
-    int availableHeight =
-        height() - borderCount * kBorderHitWidth;
+    int availableHeight = height() - borderCount * kBorderHitWidth;
 
     int y = 0;
 
     for (int i = 0; i <= index; ++i) {
 
-        y += qRound(m_rates[i] * availableHeight);
+        y += qRound(m_rates_old[i] * availableHeight);
 
         if (i < index) {
             y += kBorderHitWidth;
@@ -271,37 +354,36 @@ void VerticalDockBox::paintEvent(QPaintEvent *event)
         kBackgroundColor
         );
 
-
-    for (int i = 0; i < m_docks.size() - 1; ++i) {
-
-        int y =
-            borderPixelPosition(i);
-
-        bool hovered =
-            (i == m_hoveredBorder ||
-             i == m_draggingBorder);
-
-
-        painter.fillRect(
-            0,
-            y - kBorderHitWidth / 2,
-            width(),
-            kBorderHitWidth,
-            hovered
-                ? kBorderHoverColor
-                : kBorderColor
-            );
-    }
-
-    if(m_previewIndex > -1){
+    if (m_previewIndex > -1) {
         painter.setPen(Qt::NoPen);
-        painter.setBrush(QBrush(QColor("#0069D1")));
-        if(m_docks.count() == 0){
-            painter.drawRect(0,0,this->width(),this->height());
+        painter.setBrush(
+            QBrush(QColor("#0069D1"))
+            );
+
+        if (m_docks.isEmpty()) {
+            painter.drawRect(
+                0,
+                0,
+                width(),
+                height()
+                );
         } else {
-            const double top = m_previewIndex == 0 ? 0 : m_rates[m_previewIndex * 2 - 1];
-            const double bottom = m_previewIndex == m_docks.count() ? 1 : m_rates[m_previewIndex * 2];
-            painter.drawRect(0,top * height(),this->width(),(bottom - top) * height());
+            const double top =
+                m_previewIndex == 0
+                    ? 0
+                    : m_rates[m_previewIndex * 2 - 1];
+
+            const double bottom =
+                m_previewIndex == m_docks.count()
+                    ? 1
+                    : m_rates[m_previewIndex * 2];
+
+            painter.drawRect(
+                0,
+                top * height(),
+                width(),
+                (bottom - top) * height()
+                );
         }
     }
 }
@@ -346,7 +428,70 @@ bool VerticalDockBox::eventFilter(QObject *obj, QEvent *event)
 
 void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
 {
+    const int y = event->pos().y();
 
+    if (m_draggingBorder >= 0)
+    {
+        const int borderIndex = m_draggingBorder;
+
+        const int rateIndex = borderIndex * 2 + 1;
+
+        double rate =
+            static_cast<double>(y) /
+            static_cast<double>(height());
+
+        const double minRate =
+            m_rates[rateIndex - 1] + kMinDockRate;
+
+        const double maxRate =
+            m_rates[rateIndex + 2] - kMinDockRate;
+
+        rate = qBound(
+            minRate,
+            rate,
+            maxRate
+            );
+
+        // Update both copies of the border rate.
+        m_rates[rateIndex] = rate;
+        m_rates[rateIndex + 1] = rate;
+
+        updateChildGeometries();
+
+        const int borderY =
+            borderPixelPosition(borderIndex);
+
+        m_hoverWidget->move(
+            0,
+            borderY - kBorderHitWidth / 2
+            );
+
+        return;
+    }
+
+    const int border =
+        borderAtPosition(y);
+
+    if (border != m_hoveredBorder)
+    {
+        if (border >= 0)
+        {
+            m_hoveredBorder = border;
+            showBorderHover(border);
+        }
+        else
+        {
+            m_hoveredBorder = -1;
+            hideBorderHover();
+        }
+    }
+
+    if (border >= 0) {
+        setCursor(Qt::SplitVCursor);
+    }
+    else {
+        unsetCursor();
+    }
 }
 
 
@@ -365,20 +510,30 @@ void VerticalDockBox::leaveEvent(QEvent *event)
 {
     QWidget::leaveEvent(event);
 
-
     if (m_draggingBorder < 0) {
-
         m_hoveredBorder = -1;
 
-        unsetCursor();
+        hideBorderHover();
 
-        update();
+        unsetCursor();
     }
 }
-
 void VerticalDockBox::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
 
     updateChildGeometries();
+
+    m_borderWidget->setGeometry(rect());
+
+    if (m_hoveredBorder >= 0) {
+        const int borderY = borderPixelPosition(m_hoveredBorder);
+
+        m_hoverWidget->setGeometry(
+            0,
+            borderY - kBorderHitWidth / 2,
+            width(),
+            kBorderHitWidth
+        );
+    }
 }
