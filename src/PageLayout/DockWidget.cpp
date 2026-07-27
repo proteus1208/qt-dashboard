@@ -249,7 +249,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
             // Header drag
             if (obj == m_header)
             {
-                if(parent() && ( e->pos().y() <= 3 || e->pos().x() <= 3 || e->pos().x() >= width() - 4 )){
+                if(parent() && ( e->pos().y() <= 3 || e->pos().y() >= height() - 4 || e->pos().x() <= 3 || e->pos().x() >= width() - 4 )){
                     return false;
                 }
                 m_dragOffset = globalPos - frameGeometry().topLeft();
