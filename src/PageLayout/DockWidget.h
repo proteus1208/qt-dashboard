@@ -21,6 +21,11 @@ public:
     explicit DockWidget(QString name);
     ~DockWidget();
 
+private:
+    QSize sizeHint() const override;
+
+public:
+
     VerticalDockBox * parentDockBox();
 
     virtual void Init();

@@ -18,7 +18,8 @@ constexpr int MIN_WIDTH = 200;
 constexpr int MIN_HEIGHT = HEADER_HEIGHT;
 
 DockWidget::DockWidget(QString name)
-    : QWidget(nullptr)
+    : QWidget(nullptr),
+    m_normalGeometry(0,0,600,400)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setMouseTracking(true);
@@ -60,13 +61,18 @@ DockWidget::DockWidget(QString name)
     Init();
     InstallChildEventFilters(m_content);
 
-    QTimer::singleShot(0, [=](){
-        m_normalGeometry = this->geometry();
-    });
+    // QTimer::singleShot(0, [=](){
+    //     m_normalGeometry = this->geometry();
+    // });
 }
 
 DockWidget::~DockWidget()
 {
+}
+
+QSize DockWidget::sizeHint() const
+{
+    return QSize(600, 400);
 }
 
 VerticalDockBox *DockWidget::parentDockBox()
