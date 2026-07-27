@@ -259,9 +259,19 @@ void VerticalDockBox::onOutDock(DockWidget *dock, QPoint pos)
 void VerticalDockBox::onDropDock(DockWidget *dock, QPoint pos)
 {
     const int newIndex = calculateDockIndex(pos);
-    insertDock(dock, newIndex);
-    m_previewIndex_old = m_previewIndex = -1;
-    update();
+    QList<double> rates = getTarget(newIndex);
+    const double top1 = newIndex == 0 ? 0 : rates[newIndex * 2 - 1];
+    const double bottom1 = newIndex == m_docks.count() ? 1 : rates[newIndex * 2];
+    QPoint globalPos = mapToGlobal(QPoint(0,0));
+    QRect nextRect = QRect(globalPos.x(), globalPos.y() + top1 * height(), width(), (bottom1 - top1) * height());
+
+    dock->AnimateGeometry(nextRect);
+
+    QTimer::singleShot(210, [=](){
+        insertDock(dock, newIndex);
+        m_previewIndex_old = m_previewIndex = -1;
+        update();
+    });
 }
 
 

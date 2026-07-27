@@ -66,6 +66,7 @@ private:
     void ResizeWindow(const QPoint& pos);
     void ToggleMaximize();
 
+public:
     void AnimateGeometry(const QRect& target);
 
 private:
