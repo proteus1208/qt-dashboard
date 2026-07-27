@@ -18,7 +18,7 @@ class DockWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit DockWidget(QWidget* parent = nullptr);
+    explicit DockWidget(QString name);
     ~DockWidget();
 
     VerticalDockBox * parentDockBox();

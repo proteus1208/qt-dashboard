@@ -17,8 +17,8 @@ constexpr int INITIAL_HEIGHT = 400;
 constexpr int MIN_WIDTH = 200;
 constexpr int MIN_HEIGHT = HEADER_HEIGHT;
 
-DockWidget::DockWidget(QWidget* parent)
-    : QWidget(parent)
+DockWidget::DockWidget(QString name)
+    : QWidget(nullptr)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setMouseTracking(true);
@@ -34,7 +34,7 @@ DockWidget::DockWidget(QWidget* parent)
     m_header->setStyleSheet("background:black;");
     m_header->setMouseTracking(true);
 
-    m_headerLabel = new QLabel("DockWidget", m_header);
+    m_headerLabel = new QLabel(name, m_header);
     m_headerLabel->setStyleSheet("color:white;");
     m_headerLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     m_headerLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -76,12 +76,6 @@ VerticalDockBox *DockWidget::parentDockBox()
 
 void DockWidget::Init()
 {
-    AddRow();
-    AddWidget(new QPushButton("Button 1"), 7);
-    AddWidget(new QPushButton("Button 2"), 3);
-
-    AddRow();
-    AddWidget(new QPushButton("Button 3"), 1);
 }
 
 inline void DockWidget::InstallChildEventFilters(QWidget *widget)

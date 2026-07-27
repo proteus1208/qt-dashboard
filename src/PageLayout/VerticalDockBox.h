@@ -63,10 +63,11 @@ private:
     int calculateDockIndex(QPoint pos) const;
 
 public:
-    void insertDock(DockWidget* dock, int index);
-
-public:
+    void insertDock(DockWidget* dock, int index = -1);
     void removeDock(DockWidget* dock);
+
+private:
+    QList<double> getTarget(int index);
 
 private:
     void updateRatesAfterInsert(int index);

@@ -40,7 +40,7 @@ private:
     void registerVerticalDockBox(VerticalDockBox *);
 
     template <class Dock>
-    Dock* registerDock();
+    Dock* registerDock(QString name);
     QList<DockWidget*> docks;
 
     DockWidget *m_draggingDock = nullptr;

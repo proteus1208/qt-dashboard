@@ -80,6 +80,7 @@ QList<double> VerticalDockBox::borderRate() const
 
 void VerticalDockBox::insertDock(DockWidget *dock, int index)
 {
+    if(index < 0) index = m_docks.count();
     dock->hide();
     dock->setParent(this);
     dock->show();
@@ -89,6 +90,7 @@ void VerticalDockBox::insertDock(DockWidget *dock, int index)
         m_rates.append(1.);
         m_rates_target = m_rates;
     } else {
+        m_rates_target = getTarget(index);
         const double top1 = index == 0 ? 0 : m_rates[index * 2 - 1];
         const double bottom1 = index == m_docks.count() ? 1 : m_rates[index * 2];
 
@@ -155,6 +157,25 @@ void VerticalDockBox::removeDock(DockWidget *dock)
     dock->removeEventFilter(this);
 }
 
+QList<double> VerticalDockBox::getTarget(int index)
+{
+    if(m_docks.count() == 0) return QList<double>({0.0, 1.0});
+    QList<double> targetAnimation;
+    const double newRate = 1.0 / (m_docks.count() + 1);
+    const double scale = (1 - newRate);
+    for(int i=0, len=m_docks.count() ; i<len ; i++){
+        if (index <= i){
+            targetAnimation<<1. - (1. - m_rates_old[i * 2]) * scale;
+            targetAnimation<<1. - (1. - m_rates_old[i * 2 + 1]) * scale;
+        } else {
+            targetAnimation<<m_rates_old[i * 2] * scale;
+            targetAnimation<<m_rates_old[i * 2 + 1] * scale;
+        }
+    }
+
+    qDebug()<<targetAnimation;
+    return targetAnimation;
+}
 
 void VerticalDockBox::updateRatesAfterInsert(int index)
 {
@@ -167,7 +188,6 @@ void VerticalDockBox::updateRatesAfterInsert(int index)
 
 void VerticalDockBox::normalizeRates()
 {
-
 }
 
 void VerticalDockBox::updateChildGeometries()
@@ -212,18 +232,8 @@ void VerticalDockBox::onMoveDock(DockWidget *dock, QPoint pos)
     m_previewIndex = calculateDockIndex(pos);
     if(m_previewIndex_old != m_previewIndex){
         if(m_docks.count() > 0){
-            QList<double> targetAnimation;
-            const double newRate = 1.0 / (m_docks.count() + 1);
-            const double scale = (1 - newRate);
-            for(int i=0, len=m_docks.count() ; i<len ; i++){
-                if (m_previewIndex <= i){
-                    targetAnimation<<1. - (1. - m_rates_old[i * 2]) * scale;
-                    targetAnimation<<1. - (1. - m_rates_old[i * 2 + 1]) * scale;
-                } else {
-                    targetAnimation<<m_rates_old[i * 2] * scale;
-                    targetAnimation<<m_rates_old[i * 2 + 1] * scale;
-                }
-            }
+            QList<double> targetAnimation = getTarget(m_previewIndex);
+
             m_rates_target = targetAnimation;
             borderAnimation.setCurrentList(m_rates);
             borderAnimation.setTargetList(targetAnimation);
@@ -443,8 +453,6 @@ void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
 {
     const int y = event->pos().y();
 
-    qDebug()<<y;
-
     if (m_draggingBorder >= 0)
     {
         const int borderIndex = m_draggingBorder;
@@ -564,6 +572,7 @@ void VerticalDockBox::leaveEvent(QEvent *event)
         unsetCursor();
     }
 }
+
 void VerticalDockBox::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);

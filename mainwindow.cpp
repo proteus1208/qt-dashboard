@@ -38,6 +38,20 @@ MainWindow::MainWindow(QWidget *parent)
     horizentalLayout->addWidget(rightBox);
     registerVerticalDockBox(rightBox);
 
+    DockWidget* dock11 = registerDock<DockWidget>("Factory");
+    DockWidget* dock12 = registerDock<DockWidget>("Statistic");
+    DockWidget* dock21 = registerDock<DockWidget>("Total");
+    DockWidget* dock22 = registerDock<DockWidget>("Graph");
+    DockWidget* dock31 = registerDock<DockWidget>("Hello");
+    DockWidget* dock32 = registerDock<DockWidget>("Test");
+
+    leftBox->insertDock(dock11);
+    leftBox->insertDock(dock12);
+    centerBox->getDockBox()->insertDock(dock21);
+    centerBox->getDockBox()->insertDock(dock22);
+    rightBox->insertDock(dock31);
+    rightBox->insertDock(dock32);
+
     layoutHorizentalLayout();
     layoutHorizentalLayout();
 
@@ -154,19 +168,17 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
 
 void MainWindow::init()
 {
-    registerDock<DockWidget>();
-    registerDock<DockWidget>();
-    registerDock<DockWidget>();
+
 }
 
 template<class Dock>
-Dock* MainWindow::registerDock()
+Dock* MainWindow::registerDock(QString nmae)
 {
     static_assert(
         std::is_base_of<DockWidget, Dock>::value,
         "Dock must inherit from DockWidget"
     );
-    Dock *newDock = new Dock();
+    Dock *newDock = new Dock(nmae);
     newDock->show();
 
     connect(newDock, &DockWidget::onDrag, this, [this, newDock](QPoint pos) {
