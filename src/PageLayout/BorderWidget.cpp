@@ -18,7 +18,7 @@ void BorderWidget::paintEvent(QPaintEvent *event)
     Q_UNUSED(event);
 
     QPainter painter(this);
-    painter.setPen(QPen(kBorderColor, 1));
+    painter.setPen(QPen(kBorderColor, 2));
 
     QList<double> m_rates = m_provider->borderRate();
 
