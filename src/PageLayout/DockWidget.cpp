@@ -15,7 +15,7 @@ constexpr int BORDER_MOUSE_AREA_WIDTH = 5;
 constexpr int INITIAL_WIDTH = 600;
 constexpr int INITIAL_HEIGHT = 400;
 constexpr int MIN_WIDTH = 200;
-constexpr int MIN_HEIGHT = 100;
+constexpr int MIN_HEIGHT = HEADER_HEIGHT;
 
 DockWidget::DockWidget(QWidget* parent)
     : QWidget(parent)
@@ -214,7 +214,6 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 
         if (m_dragging)
         {
-            // qDebug()<<"hello";
             QPoint newPos = pos - m_dragOffset;
 
             move(newPos);
@@ -243,13 +242,16 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                     m_resizing = true;
                     m_resizeStartPos = globalPos;
                     m_resizeStartGeometry = geometry();
-                    return true;
+                    return false;
                 }
             }
 
             // Header drag
             if (obj == m_header)
             {
+                if(parent() && ( e->pos().y() <= 3 || e->pos().x() <= 3 || e->pos().x() >= width() - 4 )){
+                    return false;
+                }
                 m_dragOffset = globalPos - frameGeometry().topLeft();
 
                 if (m_maximized)
@@ -287,7 +289,8 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 
     if (event->type() == QEvent::MouseButtonDblClick)
     {
-        if (obj == m_header)
+        QMouseEvent* e = static_cast<QMouseEvent*>(event);
+        if (obj == m_header && e->button() == Qt::LeftButton)
         {
             ToggleMaximize();
             return true;

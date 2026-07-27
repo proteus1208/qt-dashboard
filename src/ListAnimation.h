@@ -29,12 +29,17 @@ public:
                     emit changed(m_current);
                 });
 
-        connect(&m_animation, &QVariantAnimation::finished,
-                this, &ListAnimation::finished);
+
+
+        connect(&m_animation, &QVariantAnimation::finished, [this](){
+            now_animating = false;
+            emit finished();
+        });
 
         m_animation.setStartValue(0.0);
         m_animation.setEndValue(1.0);
     }
+    bool now_animating = false;
 
     void setCurrentList(const QList<double> &list)
     {
@@ -64,11 +69,13 @@ public:
             return;
 
         m_animation.start();
+        now_animating = true;
     }
 
     void stop()
     {
         m_animation.stop();
+        now_animating = false;
     }
 
 signals:

@@ -25,7 +25,7 @@ VerticalDockBox::VerticalDockBox(QWidget *parent)
     m_borderWidget->show();
 
     m_hoverWidget->setVisible(false);
-    m_hoverWidget->setOpacity(0.0);
+    // m_hoverWidget->setOpacity(0.0);
 
     m_borderWidget->raise();
     m_hoverWidget->raise();
@@ -47,7 +47,7 @@ VerticalDockBox::VerticalDockBox(QWidget *parent)
 
             // Hide static borders while rates are animating.
             m_borderWidget->hide();
-            m_hoverWidget->hide();
+            // m_hoverWidget->hide();
         }
     );
 
@@ -68,12 +68,12 @@ QList<double> VerticalDockBox::borderRate() const
 {
     QList<double> result;
 
-    if (height() <= 0) {
+    if (borderAnimation.now_animating) {
         return result;
     }
 
-    for(int i = 0, len = m_docks.count(); i<len ; i ++){
-        result<<m_docks[i]->geometry().top();
+    for(int i = 1, len = m_docks.count(); i<len ; i ++){
+        result<<m_docks[i]->geometry().top() - 1;
     }
     return result;
 }
@@ -106,6 +106,7 @@ void VerticalDockBox::insertDock(DockWidget *dock, int index)
         borderAnimation.start();
     }
     m_docks.insert(index, dock);
+    dock->installEventFilter(this);
     m_rates_old = m_rates_target;
     updateChildGeometries();
 }
@@ -150,6 +151,8 @@ void VerticalDockBox::removeDock(DockWidget *dock)
         borderAnimation.setTargetList(targetAnimation);
         borderAnimation.start();
     }
+
+    dock->removeEventFilter(this);
 }
 
 
@@ -267,7 +270,7 @@ void VerticalDockBox::restorePreview()
 void VerticalDockBox::hideBorderHover()
 {
     m_hoverWidget->setVisible(false);
-    m_hoverWidget->setOpacity(0.0);
+    // m_hoverWidget->setOpacity(0.0);
 }
 
 void VerticalDockBox::showBorderHover(int borderIndex)
@@ -284,7 +287,7 @@ void VerticalDockBox::showBorderHover(int borderIndex)
 
     m_hoverWidget->raise();
 
-    m_hoverWidget->setOpacity(0.0);
+    // m_hoverWidget->setOpacity(0.0);
     m_hoverWidget->show();
 
     // If you have the same animation
@@ -297,44 +300,30 @@ void VerticalDockBox::showBorderHover(int borderIndex)
 }
 int VerticalDockBox::borderPixelPosition(int index) const
 {
-    if (index < 0 || index >= m_docks.size() - 1) {
+    QList<double> borderRate = this->borderRate();
+
+    if (borderRate.count() == 0 || index >= borderRate.count()) {
         return -1;
     }
 
-    int borderCount = m_docks.size() - 1;
-
-    int availableHeight = height() - borderCount * kBorderHitWidth;
-
-    int y = 0;
-
-    for (int i = 0; i <= index; ++i) {
-
-        y += qRound(m_rates_old[i] * availableHeight);
-
-        if (i < index) {
-            y += kBorderHitWidth;
-        }
-    }
-
-    return y + kBorderHitWidth / 2;
+    return borderRate[index];
 }
 
 
 int VerticalDockBox::borderAtPosition(int y) const
 {
-    if (m_docks.size() < 2) {
+    QList<double> borderRate = this->borderRate();
+
+    if (borderRate.count() == 0) {
         return -1;
     }
 
-    int half =
-        kBorderHitWidth / 2;
-
-    for (int i = 0; i < m_docks.size() - 1; ++i) {
+    for (int i = 0, len = borderRate.count(); i < len ; ++i) {
 
         int borderY =
             borderPixelPosition(i);
 
-        if (qAbs(y - borderY) <= half) {
+        if (qAbs(y - borderY) <= 3) {
             return i;
         }
     }
@@ -417,7 +406,31 @@ bool VerticalDockBox::eventFilter(QObject *obj, QEvent *event)
             mouse->modifiers()
             );
 
-        mouseMoveEvent(&converted);
+//        mouseMoveEvent(&converted);
+    }
+    else if (event->type() == QEvent::MouseButtonPress) {
+        auto *mouseEvent =
+            static_cast<QMouseEvent *>(event);
+
+        const QPoint pos =
+            mapFromGlobal(
+                mouseEvent->globalPosition().toPoint()
+                );
+
+        QMouseEvent translatedEvent(
+            QEvent::MouseButtonPress,
+            pos,
+            mouseEvent->button(),
+            mouseEvent->buttons(),
+            mouseEvent->modifiers()
+            );
+
+        mousePressEvent(&translatedEvent);
+
+        const int borderIndex = borderAtPosition(pos.y());
+        if(borderIndex > -1){
+            return true;
+        }
     }
     return QWidget::eventFilter(
         obj,
@@ -430,6 +443,8 @@ void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
 {
     const int y = event->pos().y();
 
+    qDebug()<<y;
+
     if (m_draggingBorder >= 0)
     {
         const int borderIndex = m_draggingBorder;
@@ -440,11 +455,13 @@ void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
             static_cast<double>(y) /
             static_cast<double>(height());
 
+        const double minRateC = 32. / height();
+
         const double minRate =
-            m_rates[rateIndex - 1] + kMinDockRate;
+            m_rates[rateIndex - 1] + minRateC;
 
         const double maxRate =
-            m_rates[rateIndex + 2] - kMinDockRate;
+            m_rates[rateIndex + 2] - minRateC;
 
         rate = qBound(
             minRate,
@@ -455,6 +472,8 @@ void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
         // Update both copies of the border rate.
         m_rates[rateIndex] = rate;
         m_rates[rateIndex + 1] = rate;
+
+        m_rates_old = m_rates;
 
         updateChildGeometries();
 
@@ -497,13 +516,40 @@ void VerticalDockBox::mouseMoveEvent(QMouseEvent *event)
 
 void VerticalDockBox::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton) {
+        return;
+    }
 
+    const int border = borderAtPosition(event->pos().y());
+
+    if (border < 0) {
+        return;
+    }
+
+    m_draggingBorder = border;
+    setCursor(Qt::SplitVCursor);
+
+    // qApp->installEventFilter(this);
+    QWidget::mousePressEvent(event);
 }
 
 
 void VerticalDockBox::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (event->button() != Qt::LeftButton) {
+        return;
+    }
 
+    if (m_draggingBorder >= 0) {
+        m_draggingBorder = -1;
+        unsetCursor();
+        qApp->removeEventFilter(this);
+
+        event->accept();
+        return;
+    }
+
+    QWidget::mouseReleaseEvent(event);
 }
 
 void VerticalDockBox::leaveEvent(QEvent *event)
