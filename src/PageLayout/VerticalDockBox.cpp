@@ -173,7 +173,6 @@ QList<double> VerticalDockBox::getTarget(int index)
         }
     }
 
-    qDebug()<<targetAnimation;
     return targetAnimation;
 }
 
