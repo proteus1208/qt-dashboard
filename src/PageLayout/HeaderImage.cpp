@@ -12,6 +12,8 @@ HeaderImage::HeaderImage(QWidget *parent)
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setMinimumWidth(0);
     loadImage(":/App/header.png");
+
+    installEventFilter(this);
 }
 
 int HeaderImage::heightForWidth(int width) const
@@ -67,4 +69,13 @@ void HeaderImage::paintEvent(QPaintEvent *event)
                        m_source.scaled(size(),
                                        Qt::IgnoreAspectRatio,
                                        Qt::SmoothTransformation));
+}
+
+bool HeaderImage::eventFilter(QObject *obj, QEvent *e)
+{
+    if(obj == this && e->type() == QEvent::ContextMenu){
+        qDebug()<<"ToDo - Header - ContextMenu";
+        return true;
+    }
+    return false;
 }

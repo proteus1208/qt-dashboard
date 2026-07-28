@@ -19,6 +19,8 @@ protected:
     QSize minimumSizeHint() const override;
     void paintEvent(QPaintEvent *event) override;
 
+    bool eventFilter(QObject *obj, QEvent *e) override;
+
 private:
     void loadImage(const QString &path);
 

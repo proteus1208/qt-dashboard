@@ -159,6 +159,10 @@ void DockWidget::paintEvent(QPaintEvent*)
 
 bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 {
+    if (obj == m_header && event->type() == QEvent::ContextMenu){
+        qDebug()<<"ToDo - Dock Context Menu";
+        return true;
+    }
     if (event->type() == QEvent::MouseMove)
     {
         QMouseEvent* e = dynamic_cast<QMouseEvent*>(event);
