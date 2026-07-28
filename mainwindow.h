@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QTimer>
 
+#include "src/Theme.h"
+
 #include "src/PageLayout/DockWidget.h"
 #include "src/PageLayout/VerticalDockBox.h"
 
@@ -49,5 +51,11 @@ private:
     void startDockDrag(DockWidget* dock, QPoint pos);
     void updateDockBoxPreview(DockWidget* dock, QPoint pos);
     void finishDockDrag(DockWidget* dock, QPoint pos);
+
+private:
+    void setTheme(Theme);
+    void setTheme(QString);
+    void registerTheme(Theme);
+    QVector<Theme> themes;
 };
 #endif // MAINWINDOW_H

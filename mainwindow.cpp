@@ -19,6 +19,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    Theme defaultTheme;
+
+    Theme testTheme("Test Theme");
+    testTheme.bg = QColor("#ffff00");
+
+    registerTheme(defaultTheme);
+    registerTheme(testTheme);
+
     setWindowTitle(env::kProjectName);
     ui->centralwidget->setAutoFillBackground(true);
     QPalette palette = ui->centralwidget->palette();
@@ -52,7 +60,6 @@ MainWindow::MainWindow(QWidget *parent)
     rightBox->insertDock(dock31);
     rightBox->insertDock(dock32);
 
-    layoutHorizentalLayout();
     layoutHorizentalLayout();
 
     QTimer::singleShot(0, [=](){
@@ -96,7 +103,6 @@ void MainWindow::startDockDrag(DockWidget* dock, QPoint pos)
 
     m_currentDockBox = nullptr;
 }
-
 
 void MainWindow::updateDockBoxPreview( DockWidget* dock, QPoint pos) {
     if (!dock) return;
@@ -156,6 +162,29 @@ void MainWindow::finishDockDrag( DockWidget* dock, QPoint pos) {
     m_draggingDock = nullptr;
 }
 
+void MainWindow::setTheme(Theme theme)
+{
+    QVariant v;
+    v.setValue(theme);
+    qApp->setProperty("Theme", v);
+
+    QEvent *e = new QEvent(QEvent::User);
+    e->type();
+    qApp->postEvent(qApp, e);
+}
+
+void MainWindow::setTheme(QString name){
+    for(auto theme: themes){
+        if(theme.name == name) return setTheme(theme);
+    }
+    qDebug()<<"No Theme named"<<name;
+}
+
+void MainWindow::registerTheme(Theme theme)
+{
+    themes<<theme;
+}
+
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
@@ -168,7 +197,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
 
 void MainWindow::init()
 {
-
+    setTheme("Default");
 }
 
 template<class Dock>
