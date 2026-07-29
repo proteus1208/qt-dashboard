@@ -9,6 +9,9 @@
 #include <QRect>
 #include <QPropertyAnimation>
 
+#include "../Theme.h"
+#include "ItemFrame.h"
+
 class VerticalDockBox;
 
 class QLabel;
@@ -32,7 +35,7 @@ public:
     void InstallChildEventFilters(QWidget* widget);
 
     void AddRow();
-    void AddWidget(QWidget* widget, int rate = 1);
+    void AddWidget(QString title, QWidget* widget, int rate = 1);
     void detachFromDock(QPoint pos);
 
 public:
@@ -45,6 +48,10 @@ public:
 protected:
     void paintEvent(QPaintEvent* event) override;
     bool eventFilter(QObject* obj, QEvent* event) override;
+
+private:
+    void updateTheme();
+    Theme theme;
 
 private:
     enum ResizeEdge
@@ -79,6 +86,7 @@ private:
     QVBoxLayout* m_contentLayout = nullptr;
 
     QHBoxLayout* m_currentRow = nullptr;
+    QHBoxLayout* headerLayout = nullptr;
 
     bool m_dragging = false;
     bool m_resizing = false;
@@ -98,9 +106,11 @@ private:
 
     QPropertyAnimation* m_animation = nullptr;
 
+    QVector<ItemFrame*> items;
+    QVector<QHBoxLayout*> m_rows;
+
 signals:
     void onDrag(QPoint);
     void onMoving(QPoint);
     void onDrop(QPoint);
 };
-

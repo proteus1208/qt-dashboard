@@ -1,9 +1,9 @@
 #include "BorderWidget.h"
 #include "HorizentalLayout.h"
+#include "../Theme.h"
 
 #include <QPainter>
-
-const QColor kBorderColor(0x3d, 0x3d, 0x3d);
+#include <QCoreApplication>
 
 BorderWidget::BorderWidget(QWidget *parent, BorderRateProvider *layout, Type type)
     : QWidget(parent)
@@ -17,8 +17,10 @@ void BorderWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
+    Theme theme = qApp->property("Theme").value<Theme>();
+
     QPainter painter(this);
-    painter.setPen(QPen(kBorderColor, 2));
+    painter.setPen(QPen(theme.split_border, theme.split_border_width));
 
     QList<double> m_rates = m_provider->borderRate();
 

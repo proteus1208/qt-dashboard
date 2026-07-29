@@ -7,9 +7,12 @@
 #include "env.h"
 
 #include <QColor>
+#include <QCoreApplication>
 #include <QResizeEvent>
 #include <QEvent>
 #include <QPoint>
+
+#include <QPushButton>
 
 #include <QDebug>
 
@@ -168,9 +171,17 @@ void MainWindow::setTheme(Theme theme)
     v.setValue(theme);
     qApp->setProperty("Theme", v);
 
-    QEvent *e = new QEvent(QEvent::User);
-    e->type();
-    qApp->postEvent(qApp, e);
+    if (!horizentalLayout) {
+        return;
+    }
+
+    QEvent themeEvent(QEvent::Type(Theme::EventType));
+    QCoreApplication::sendEvent(horizentalLayout, &themeEvent);
+
+    const auto children = horizentalLayout->findChildren<QWidget*>();
+    for (QWidget* child : children) {
+        QCoreApplication::sendEvent(child, &themeEvent);
+    }
 }
 
 void MainWindow::setTheme(QString name){

@@ -6,14 +6,14 @@
 #include <QtMath>
 #include "HoverWidget.h"
 #include "BorderWidget.h"
-
-const QColor kBackgroundColor(0x1e, 0x1e, 0x1e);
+#include "../Theme.h"
 
 HorizentalLayout::HorizentalLayout(QWidget *parent)
     : QWidget(parent)
 {
     setMouseTracking(true);
     setAutoFillBackground(false);
+    installEventFilter(this);
 
     m_borderWidget = new BorderWidget(this, this);
     m_hoverWidget = new HoverWidget(this);
@@ -115,8 +115,10 @@ void HorizentalLayout::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
+    Theme theme = qApp->property("Theme").value<Theme>();
+
     QPainter painter(this);
-    painter.fillRect(rect(), kBackgroundColor);
+    painter.fillRect(rect(), theme.split_bg);
 }
 
 void HorizentalLayout::resizeEvent(QResizeEvent *event)
@@ -253,6 +255,14 @@ void HorizentalLayout::hideBorderHover()
 
 bool HorizentalLayout::eventFilter(QObject *obj, QEvent *event)
 {
+    if (obj == this && event->type() == Theme::EventType)
+    {
+        update();
+        if (m_borderWidget) m_borderWidget->update();
+        if (m_hoverWidget) m_hoverWidget->update();
+        return false;
+    }
+
     // Border is currently being dragged.
     // Capture mouse movement and release globally.
     if (m_draggingBorder >= 0) {

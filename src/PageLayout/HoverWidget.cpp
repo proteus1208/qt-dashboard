@@ -1,8 +1,8 @@
 #include "HoverWidget.h"
+#include "../Theme.h"
 
 #include <QPainter>
-
-const QColor kBorderHoverColor(0x00, 0x8c, 0xff);
+#include <QCoreApplication>
 
 HoverWidget::HoverWidget(QWidget *parent)
     : QWidget(parent)
@@ -25,8 +25,10 @@ void HoverWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
+    Theme theme = qApp->property("Theme").value<Theme>();
+
     QPainter painter(this);
-    QColor color = kBorderHoverColor;
+    QColor color = theme.split_hover;
     color.setAlphaF(m_opacity);
-    painter.fillRect(rect(), kBorderHoverColor);
+    painter.fillRect(rect(), color);
 }

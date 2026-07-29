@@ -7,16 +7,16 @@
 #include <QtMath>
 #include <QObject>
 #include <QTimer>
+#include <QCoreApplication>
 
-const QColor kBackgroundColor(0x1e, 0x1e, 0x1e);
-const QColor kBorderColor(0x3d, 0x3d, 0x3d);
-const QColor kBorderHoverColor(0x5a, 0x9f, 0xff, 0x99);
+#include "../Theme.h"
 
 VerticalDockBox::VerticalDockBox(QWidget *parent)
     : QWidget(parent)
 {
     setMouseTracking(true);
     setAutoFillBackground(false);
+    installEventFilter(this);
 
     m_borderWidget = new BorderWidget(this, this, BorderWidget::Type::Vertical);
     m_hoverWidget = new HoverWidget(this);
@@ -73,7 +73,7 @@ QList<double> VerticalDockBox::borderRate() const
     }
 
     for(int i = 1, len = m_docks.count(); i<len ; i ++){
-        result<<m_docks[i]->geometry().top() - 1;
+        result<<m_docks[i]->geometry().top();
     }
     return result;
 }
@@ -355,17 +355,19 @@ void VerticalDockBox::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
 
+    Theme theme = qApp->property("Theme").value<Theme>();
+
     QPainter painter(this);
 
     painter.fillRect(
         rect(),
-        kBackgroundColor
+        theme.split_bg
         );
 
     if (m_previewIndex > -1) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(
-            QBrush(QColor("#0069D1"))
+            QBrush(theme.split_preview)
             );
 
         if (m_docks.isEmpty()) {
@@ -399,6 +401,14 @@ void VerticalDockBox::paintEvent(QPaintEvent *event)
 
 bool VerticalDockBox::eventFilter(QObject *obj, QEvent *event)
 {
+    if (obj == this && event->type() == Theme::EventType)
+    {
+        update();
+        if (m_borderWidget) m_borderWidget->update();
+        if (m_hoverWidget) m_hoverWidget->update();
+        return false;
+    }
+
     DockWidget* dock = qobject_cast<DockWidget*>(obj);
 
     if (!dock || !m_docks.contains(dock))

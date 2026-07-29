@@ -9,13 +9,10 @@
 #include <QCursor>
 #include <QTimer>
 
-constexpr int HEADER_HEIGHT = 32;
-constexpr int BORDER_WIDTH = 1;
 constexpr int BORDER_MOUSE_AREA_WIDTH = 5;
 constexpr int INITIAL_WIDTH = 600;
 constexpr int INITIAL_HEIGHT = 400;
 constexpr int MIN_WIDTH = 200;
-constexpr int MIN_HEIGHT = HEADER_HEIGHT;
 
 DockWidget::DockWidget(QString name)
     : QWidget(nullptr),
@@ -23,31 +20,24 @@ DockWidget::DockWidget(QString name)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setMouseTracking(true);
-    setMinimumSize(MIN_WIDTH, MIN_HEIGHT);
     resize(INITIAL_WIDTH, INITIAL_HEIGHT);
+    this->setAutoFillBackground(true);
 
     m_rootLayout = new QVBoxLayout(this);
-    m_rootLayout->setContentsMargins(BORDER_WIDTH, BORDER_WIDTH, BORDER_WIDTH, BORDER_WIDTH);
     m_rootLayout->setSpacing(0);
 
     m_header = new QWidget(this);
-    m_header->setFixedHeight(HEADER_HEIGHT);
-    m_header->setStyleSheet("background:black;");
     m_header->setMouseTracking(true);
 
     m_headerLabel = new QLabel(name, m_header);
-    m_headerLabel->setStyleSheet("color:white;");
     m_headerLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     m_headerLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    QHBoxLayout* headerLayout = new QHBoxLayout(m_header);
-    headerLayout->setContentsMargins(10, 0, 0, 0);
+    headerLayout = new QHBoxLayout(m_header);
     headerLayout->addWidget(m_headerLabel);
 
     m_content = new QWidget(this);
     m_contentLayout = new QVBoxLayout(m_content);
-    m_contentLayout->setContentsMargins(5, 5, 5, 5);
-    m_contentLayout->setSpacing(5);
 
     m_rootLayout->addWidget(m_header);
     m_rootLayout->addWidget(m_content);
@@ -57,6 +47,7 @@ DockWidget::DockWidget(QString name)
     m_content->installEventFilter(this);
     installEventFilter(this);
 
+    updateTheme();
 
     Init();
     InstallChildEventFilters(m_content);
@@ -82,6 +73,19 @@ VerticalDockBox *DockWidget::parentDockBox()
 
 void DockWidget::Init()
 {
+    AddRow();
+    QPushButton *btn1 = new QPushButton("Button 1");
+    btn1->setStyleSheet("background:black; color:white; width:100%; height:100%");
+    AddWidget("Button 1", btn1, 7);
+
+    QPushButton *btn2 = new QPushButton("Button 1");
+    btn2->setStyleSheet("background:black; color:white; width:100%; height:100%");
+    AddWidget("Button 2",btn2, 7);
+
+    AddRow();
+    QPushButton *btn3 = new QPushButton("Button 1");
+    btn3->setStyleSheet("background:black; color:white; width:100%; height:100%");
+    AddWidget("Button 3",btn3, 7);
 }
 
 inline void DockWidget::InstallChildEventFilters(QWidget *widget)
@@ -101,20 +105,27 @@ inline void DockWidget::InstallChildEventFilters(QWidget *widget)
 void DockWidget::AddRow()
 {
     m_currentRow = new QHBoxLayout();
+    m_currentRow->setContentsMargins(0, 0, 0, 0);
+    m_currentRow->setSpacing(theme.dock_content_gap);
+    m_rows << m_currentRow;
+
     QWidget* rowWidget = new QWidget();
     rowWidget->setLayout(m_currentRow);
     rowWidget->installEventFilter(this);
     m_contentLayout->addWidget(rowWidget);
 }
 
-void DockWidget::AddWidget(QWidget* widget, int rate)
+void DockWidget::AddWidget(QString title, QWidget* widget, int rate)
 {
     if (!m_currentRow)
         AddRow();
 
-    InstallChildEventFilters(widget);
-
-    m_currentRow->addWidget(widget, rate);
+    ItemFrame *newFrame = new ItemFrame(title,widget, this);
+    newFrame->setTheme(theme);
+    newFrame->show();
+    items<<newFrame;
+    InstallChildEventFilters(newFrame);
+    m_currentRow->addWidget(newFrame, rate);
 }
 
 void DockWidget::detachFromDock(QPoint pos)
@@ -125,7 +136,7 @@ void DockWidget::detachFromDock(QPoint pos)
     setWindowFlags( Qt::FramelessWindowHint | Qt::Window );
     move(globalPos);
     int newX = pos.x() - m_normalGeometry.width() / 2;
-    int newY = pos.y() - HEADER_HEIGHT / 2;
+    int newY = pos.y() - theme.dock_header_height / 2;
     setGeometry(
         newX,
         newY,
@@ -134,7 +145,7 @@ void DockWidget::detachFromDock(QPoint pos)
     );
 
     m_dragOffset = pos - frameGeometry().topLeft();
-    setMinimumSize( MIN_WIDTH, MIN_HEIGHT );
+    setMinimumSize( MIN_WIDTH, theme.dock_header_height );
     show();
     raise();
     activateWindow();
@@ -142,26 +153,33 @@ void DockWidget::detachFromDock(QPoint pos)
 
 int DockWidget::minimumDockHeight() const
 {
-    return HEADER_HEIGHT + 20; // header + content minimum
+    return theme.dock_header_height + 20; // header + content minimum
 }
 
 void DockWidget::paintEvent(QPaintEvent*)
 {
+    QVariant vt = qApp->property("Theme");
+    Theme theme = vt.value<Theme>();
+
     QPainter painter(this);
-    painter.setPen(QPen(Qt::black, BORDER_WIDTH));
+    painter.setPen(QPen(theme.dock_border, theme.dock_padding + 2));
     painter.drawRect(
-        BORDER_WIDTH / 2,
-        BORDER_WIDTH / 2,
-        width() - BORDER_WIDTH,
-        height() - BORDER_WIDTH
+        theme.dock_padding / 2 - 1,
+        theme.dock_padding / 2 - 1,
+        width() - theme.dock_padding + 2,
+        height() - theme.dock_padding + 2
         );
 }
 
 bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 {
+    if(event->type() == Theme::EventType){
+        updateTheme();
+
+    }
     if (obj == m_header && event->type() == QEvent::ContextMenu){
         qDebug()<<"ToDo - Dock Context Menu";
-        return true;
+        // return true;
     }
     if (event->type() == QEvent::MouseMove)
     {
@@ -185,7 +203,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
                 m_pendingMaximizedDrag = false;
 
                 int newX = pos.x() - m_normalGeometry.width() / 2;
-                int newY = pos.y() - HEADER_HEIGHT / 2;
+                int newY = pos.y() - theme.dock_header_height / 2;
 
                 setGeometry(
                     newX,
@@ -304,6 +322,52 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
     return QWidget::eventFilter(obj, event);
 }
 
+void DockWidget::updateTheme()
+{
+    theme = qApp->property("Theme").value<Theme>();
+    m_rootLayout->setContentsMargins(
+        theme.dock_padding,
+        theme.dock_padding,
+        theme.dock_padding,
+        theme.dock_padding
+        );
+    setMinimumSize(MIN_WIDTH, theme.dock_header_height);
+    m_header->setFixedHeight(theme.dock_header_height);
+    m_header->setStyleSheet(
+        QString("background:%1;")
+            .arg(theme.dock_bg.name(QColor::HexRgb))
+        );
+    headerLayout->setContentsMargins(
+        theme.dock_content_padding,
+        theme.dock_content_padding,
+        theme.dock_content_padding,
+        theme.dock_content_padding
+        );
+    m_headerLabel->setStyleSheet(
+        QString("padding-left:3px;color:%1; background:%2; font-size:%3px;")
+            .arg(theme.dock_header_text_color.name(QColor::HexRgb))
+            .arg(theme.dock_header_bg.name(QColor::HexRgb))
+            .arg(theme.dock_header_text_fontSize)
+        );
+    m_content->setStyleSheet(
+        QString("background:%1;")
+            .arg(theme.dock_bg.name(QColor::HexRgb))
+        );
+    m_contentLayout->setContentsMargins(
+        theme.dock_content_padding,
+        theme.dock_content_padding,
+        theme.dock_content_padding,
+        theme.dock_content_padding
+        );
+    m_contentLayout->setSpacing(theme.dock_content_gap);
+    for(auto row: m_rows){
+        row->setSpacing(theme.dock_content_gap);
+    }
+    for(auto item: items){
+        item->setTheme(theme);
+    }
+}
+
 DockWidget::ResizeEdge DockWidget::GetResizeEdge(const QPoint& pos)
 {
     QRect r = rect();
@@ -396,8 +460,8 @@ void DockWidget::ResizeWindow(const QPoint& pos)
     if (g.width() < MIN_WIDTH)
         g.setWidth(MIN_WIDTH);
 
-    if (g.height() < MIN_HEIGHT)
-        g.setHeight(MIN_HEIGHT);
+    if (g.height() < theme.dock_header_height)
+        g.setHeight(theme.dock_header_height);
 
     setGeometry(g);
 }

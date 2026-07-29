@@ -39,6 +39,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/PageLayout/HoverWidget.h src/PageLayout/HoverWidget.cpp
         src/PageLayout/BorderRateProvider.h
         src/Theme.h
+        src/PageLayout/ItemFrame.h src/PageLayout/ItemFrame.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
