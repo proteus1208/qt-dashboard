@@ -5,7 +5,6 @@
 #include <QScreen>
 #include <QPainter>
 #include <QMouseEvent>
-#include <QPushButton>
 #include <QLabel>
 #include <QCursor>
 #include <QTimer>
@@ -79,26 +78,6 @@ QString DockWidget::title() const
     return m_headerLabel->text();
 }
 
-void DockWidget::ReInit()
-{
-    QLayoutItem* child;
-    while ((child = m_contentLayout->takeAt(0)) != nullptr)
-    {
-        if (child->widget())
-        {
-            child->widget()->deleteLater();
-        }
-        delete child;
-    }
-
-    items.clear();
-    m_rows.clear();
-    m_currentRow = nullptr;
-
-    Init();
-    InstallChildEventFilters(m_content);
-}
-
 void DockWidget::hideDock()
 {
     VerticalDockBox* box = parentDockBox();
@@ -125,19 +104,8 @@ void DockWidget::showDock()
 
 void DockWidget::Init()
 {
-    AddRow();
-    QPushButton *btn1 = new QPushButton("Button 1");
-    btn1->setStyleSheet("background:black; color:white; width:100%; height:100%");
-    AddWidget("Button 1", btn1, 7);
-
-    QPushButton *btn2 = new QPushButton("Button 1");
-    btn2->setStyleSheet("background:black; color:white; width:100%; height:100%");
-    AddWidget("Button 2",btn2, 7);
-
-    AddRow();
-    QPushButton *btn3 = new QPushButton("Button 1");
-    btn3->setStyleSheet("background:black; color:white; width:100%; height:100%");
-    AddWidget("Button 3",btn3, 7);
+    // Intentionally empty: dock content is configured from the outside via
+    // AddRow()/AddWidget() (see mainwindow.cpp) rather than hardcoded here.
 }
 
 inline void DockWidget::InstallChildEventFilters(QWidget *widget)

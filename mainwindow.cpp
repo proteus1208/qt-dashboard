@@ -4,8 +4,10 @@
 #include "PageLayout/HeaderDockPanel.h"
 #include "PageLayout/HeaderImage.h"
 #include "PageLayout/HorizentalLayout.h"
-#include "PageLayout/SampleDashboardDock.h"
 #include "PageLayout/VerticalDockBox.h"
+#include "Widgets/Battery.h"
+#include "Widgets/LightButton.h"
+#include "Widgets/LineChartWidget.h"
 #include "env.h"
 
 #include <QColor>
@@ -13,8 +15,10 @@
 #include <QResizeEvent>
 #include <QEvent>
 #include <QPoint>
+#include <QRandomGenerator>
 
 #include <QPushButton>
+#include <QHBoxLayout>
 #include <QMenu>
 #include <QAction>
 
@@ -64,6 +68,61 @@ Theme makeTheme(
     return t;
 }
 
+QVector<double> randomSeries(int count, double lo, double hi)
+{
+    QVector<double> values;
+    values.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        values << lo + QRandomGenerator::global()->generateDouble() * (hi - lo);
+    }
+    return values;
+}
+
+QWidget* makeStatusRow()
+{
+    QWidget* row = new QWidget();
+    QHBoxLayout* layout = new QHBoxLayout(row);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+
+    LightButton* ok = new LightButton(row);
+    ok->setText("OK");
+    ok->setGreen();
+
+    LightButton* warn = new LightButton(row);
+    warn->setText("WARN");
+    warn->setYellow();
+
+    LightButton* err = new LightButton(row);
+    err->setText("ERR");
+    err->setRed();
+
+    layout->addWidget(ok);
+    layout->addWidget(warn);
+    layout->addWidget(err);
+
+    return row;
+}
+
+Battery* makeBattery(double value, const QColor &accent)
+{
+    Battery* battery = new Battery();
+    battery->setRange(0, 100);
+    battery->setAlarmValue(20);
+    battery->setNormalColorStart(accent.lighter(110));
+    battery->setNormalColorEnd(accent.darker(110));
+    battery->setValue(value);
+    return battery;
+}
+
+LineChartWidget* makeChart()
+{
+    LineChartWidget* chart = new LineChartWidget();
+    chart->setRange(0, 100);
+    chart->setValues(randomSeries(16, 20, 95));
+    return chart;
+}
+
 } // namespace
 
 MainWindow::MainWindow(QWidget *parent)
@@ -110,7 +169,30 @@ MainWindow::MainWindow(QWidget *parent)
     DockWidget* dock21 = registerDock<DockWidget>("Total");
     DockWidget* dock22 = registerDock<DockWidget>("Graph");
     DockWidget* dock31 = registerDock<DockWidget>("Hello");
-    DockWidget* dock32 = registerDock<SampleDashboardDock>("Dashboard");
+    DockWidget* dock32 = registerDock<DockWidget>("Test");
+
+    // Each group (left/center/right dock box) gets two docks, each showing
+    // a different sample component: battery gauge, status row, line chart.
+    dock11->AddRow();
+    dock11->AddWidget("Battery", makeBattery(72, defaultTheme.split_hover), 1);
+    dock11->AddRow();
+    dock11->AddWidget("Trend", makeChart(), 3);
+    dock11->AddWidget("Trend", makeChart(), 7);
+
+    dock12->AddRow();
+    dock12->AddWidget("Trend", makeChart(), 1);
+
+    dock21->AddRow();
+    dock21->AddWidget("Status", makeStatusRow(), 1);
+
+    dock22->AddRow();
+    dock22->AddWidget("Battery", makeBattery(45, defaultTheme.split_hover), 1);
+
+    dock31->AddRow();
+    dock31->AddWidget("Trend", makeChart(), 1);
+
+    dock32->AddRow();
+    dock32->AddWidget("Status", makeStatusRow(), 1);
 
     leftBox->insertDock(dock11);
     leftBox->insertDock(dock12);

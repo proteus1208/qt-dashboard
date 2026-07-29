@@ -40,7 +40,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/PageLayout/BorderRateProvider.h
         src/Theme.h
         src/PageLayout/ItemFrame.h src/PageLayout/ItemFrame.cpp
-        src/PageLayout/SampleDashboardDock.h src/PageLayout/SampleDashboardDock.cpp
         src/Widgets/Battery.h src/Widgets/Battery.cpp
         src/Widgets/LightButton.h src/Widgets/LightButton.cpp
         src/Widgets/SmoothCurve.h src/Widgets/SmoothCurve.cpp
