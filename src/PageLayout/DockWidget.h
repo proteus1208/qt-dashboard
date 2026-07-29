@@ -30,6 +30,7 @@ private:
 public:
 
     VerticalDockBox * parentDockBox();
+    QString title() const;
 
     virtual void Init();
     void InstallChildEventFilters(QWidget* widget);
@@ -37,6 +38,9 @@ public:
     void AddRow();
     void AddWidget(QString title, QWidget* widget, int rate = 1);
     void detachFromDock(QPoint pos);
+
+    void hideDock();
+    void showDock();
 
 public:
     int minimumDockHeight() const;

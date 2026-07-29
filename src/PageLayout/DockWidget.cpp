@@ -1,4 +1,5 @@
 #include "DockWidget.h"
+#include "VerticalDockBox.h"
 
 #include <QApplication>
 #include <QScreen>
@@ -8,6 +9,8 @@
 #include <QLabel>
 #include <QCursor>
 #include <QTimer>
+#include <QContextMenuEvent>
+#include <QMenu>
 
 constexpr int BORDER_MOUSE_AREA_WIDTH = 5;
 constexpr int INITIAL_WIDTH = 600;
@@ -69,6 +72,35 @@ QSize DockWidget::sizeHint() const
 VerticalDockBox *DockWidget::parentDockBox()
 {
     return (VerticalDockBox *) this->parent();
+}
+
+QString DockWidget::title() const
+{
+    return m_headerLabel->text();
+}
+
+void DockWidget::hideDock()
+{
+    VerticalDockBox* box = parentDockBox();
+    if (box) box->removeDock(this);
+    hide();
+}
+
+void DockWidget::showDock()
+{
+    VerticalDockBox* box = parentDockBox();
+    if (box)
+    {
+        box->insertDock(this);
+    }
+    else
+    {
+        // Floating (detached, not currently owned by any dock box):
+        // just restore the top-level window instead of trying to dock it.
+        show();
+        raise();
+        activateWindow();
+    }
 }
 
 void DockWidget::Init()
@@ -178,8 +210,16 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
 
     }
     if (obj == m_header && event->type() == QEvent::ContextMenu){
-        qDebug()<<"ToDo - Dock Context Menu";
-        // return true;
+        QContextMenuEvent* e = static_cast<QContextMenuEvent*>(event);
+
+        QMenu menu(this);
+        QAction* hideAction = menu.addAction("Hide");
+        connect(hideAction, &QAction::triggered, this, [this]() {
+            hideDock();
+        });
+        menu.exec(e->globalPos());
+
+        return true;
     }
     if (event->type() == QEvent::MouseMove)
     {
@@ -344,7 +384,8 @@ void DockWidget::updateTheme()
         theme.dock_content_padding
         );
     m_headerLabel->setStyleSheet(
-        QString("padding-left:3px;color:%1; background:%2; font-size:%3px;")
+        QString("padding-left:%1px;color:%2; background:%3; font-size:%4px;")
+            .arg(theme.dock_header_padding_left)
             .arg(theme.dock_header_text_color.name(QColor::HexRgb))
             .arg(theme.dock_header_bg.name(QColor::HexRgb))
             .arg(theme.dock_header_text_fontSize)

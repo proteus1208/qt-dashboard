@@ -52,6 +52,9 @@ private:
     void updateDockBoxPreview(DockWidget* dock, QPoint pos);
     void finishDockDrag(DockWidget* dock, QPoint pos);
 
+    void showHeaderContextMenu(QPoint globalPos);
+    void toggleDockVisibility(DockWidget* dock);
+
 private:
     void setTheme(Theme);
     void setTheme(QString);

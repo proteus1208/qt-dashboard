@@ -108,17 +108,37 @@ void VerticalDockBox::insertDock(DockWidget *dock, int index)
         borderAnimation.start();
     }
     m_docks.insert(index, dock);
-    dock->installEventFilter(this);
+    installDockEventFilters(dock);
     m_rates_old = m_rates_target;
     updateChildGeometries();
+}
+
+void VerticalDockBox::installDockEventFilters(QWidget* widget)
+{
+    widget->installEventFilter(this);
+
+    const auto children = widget->findChildren<QWidget*>();
+    for (QWidget* child : children) {
+        child->installEventFilter(this);
+    }
+}
+
+void VerticalDockBox::removeDockEventFilters(QWidget* widget)
+{
+    widget->removeEventFilter(this);
+
+    const auto children = widget->findChildren<QWidget*>();
+    for (QWidget* child : children) {
+        child->removeEventFilter(this);
+    }
 }
 
 
 void VerticalDockBox::removeDock(DockWidget *dock)
 {
     const int index = m_docks.indexOf(dock);
-    const double dockHeight_rate = m_rates_old[index * 2 + 1] - m_rates_old[index * 2];
     if(index == -1) return;
+    const double dockHeight_rate = m_rates_old[index * 2 + 1] - m_rates_old[index * 2];
     m_docks.removeAt(index);
 
     m_rates.removeAt(index * 2 + 1);
@@ -154,7 +174,7 @@ void VerticalDockBox::removeDock(DockWidget *dock)
         borderAnimation.start();
     }
 
-    dock->removeEventFilter(this);
+    removeDockEventFilters(dock);
 }
 
 QList<double> VerticalDockBox::getTarget(int index)
@@ -409,7 +429,16 @@ bool VerticalDockBox::eventFilter(QObject *obj, QEvent *event)
         return false;
     }
 
-    DockWidget* dock = qobject_cast<DockWidget*>(obj);
+    // obj is often a widget nested somewhere inside a dock (a button, a
+    // label, an ItemFrame...) rather than the DockWidget itself, since docks
+    // tile the box edge-to-edge and swallow the raw mouse events. Walk up to
+    // find the owning dock so border-hover/drag detection still works.
+    DockWidget* dock = nullptr;
+    for (QWidget* w = qobject_cast<QWidget*>(obj); w; w = w->parentWidget())
+    {
+        dock = qobject_cast<DockWidget*>(w);
+        if (dock) break;
+    }
 
     if (!dock || !m_docks.contains(dock))
     {
@@ -435,7 +464,7 @@ bool VerticalDockBox::eventFilter(QObject *obj, QEvent *event)
             mouse->modifiers()
             );
 
-//        mouseMoveEvent(&converted);
+        mouseMoveEvent(&converted);
     }
     else if (event->type() == QEvent::MouseButtonPress) {
         auto *mouseEvent =

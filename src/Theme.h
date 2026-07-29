@@ -23,7 +23,7 @@ public:
     int gap = 8;
     QColor bg = QColor("#0b0d12");
 
-    int dock_padding = 2;
+    int dock_padding = 3;
     int dock_gap = 8;
     QColor dock_bg = QColor("#12141b");
 
@@ -33,6 +33,7 @@ public:
 
     QColor dock_header_text_color = QColor("#eef0f5");
     int dock_header_text_fontSize = 14;
+    int dock_header_padding_left = 12;
 
     int dock_content_gap = 8;
     int dock_content_padding = 8;
@@ -43,6 +44,7 @@ public:
     int dock_content_item_header_height = 28;
 
     int dock_content_item_header_text_fontSize = 12;
+    int dock_content_item_header_padding_left = 8;
 
     QColor dock_content_item_content_bg = QColor("#12141b");
     QColor dock_content_item_content_text = QColor("#eef0f5");

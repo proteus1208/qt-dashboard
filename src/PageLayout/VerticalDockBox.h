@@ -62,6 +62,9 @@ private:
 
     int calculateDockIndex(QPoint pos) const;
 
+    void installDockEventFilters(QWidget* widget);
+    void removeDockEventFilters(QWidget* widget);
+
 public:
     void insertDock(DockWidget* dock, int index = -1);
     void removeDock(DockWidget* dock);

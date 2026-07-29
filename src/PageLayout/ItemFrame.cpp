@@ -35,7 +35,8 @@ void ItemFrame::setTheme(Theme theme)
             .arg(theme.dock_content_item_bg.name(QColor::HexRgb))
         );
     m_header_label->setStyleSheet(
-        QString("background:%1; color:%2; font-size:%3px;")
+        QString("padding-left:%1px;background:%2; color:%3; font-size:%4px;")
+            .arg(theme.dock_content_item_header_padding_left)
             .arg(theme.dock_content_item_header_bg.name(QColor::HexRgb))
             .arg(theme.dock_content_item_header_text_color.name(QColor::HexRgb))
             .arg(theme.dock_content_item_header_text_fontSize)

@@ -5,6 +5,7 @@
 
 #include <QPainter>
 #include <QtMath>
+#include <QContextMenuEvent>
 
 HeaderImage::HeaderImage(QWidget *parent)
     : QWidget(parent)
@@ -74,7 +75,8 @@ void HeaderImage::paintEvent(QPaintEvent *event)
 bool HeaderImage::eventFilter(QObject *obj, QEvent *e)
 {
     if(obj == this && e->type() == QEvent::ContextMenu){
-        qDebug()<<"ToDo - Header - ContextMenu";
+        QContextMenuEvent* ce = static_cast<QContextMenuEvent*>(e);
+        emit contextMenuRequested(ce->globalPos());
         return true;
     }
     return false;

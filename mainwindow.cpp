@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 
 #include "PageLayout/HeaderDockPanel.h"
+#include "PageLayout/HeaderImage.h"
 #include "PageLayout/HorizentalLayout.h"
 #include "PageLayout/VerticalDockBox.h"
 #include "env.h"
@@ -13,8 +14,56 @@
 #include <QPoint>
 
 #include <QPushButton>
+#include <QMenu>
+#include <QAction>
 
 #include <QDebug>
+
+namespace {
+
+// Builds a full Theme from a handful of hand-picked surface colors, reusing
+// the Default theme's spacing/font sizes so every registered theme shares
+// the same layout and only the palette changes.
+Theme makeTheme(
+    const QString &name,
+    const QColor &dockBg,
+    const QColor &headerBg,
+    const QColor &itemBg,
+    const QColor &itemHeaderBg,
+    const QColor &contentBg,
+    const QColor &accent,
+    bool light = false)
+{
+    Theme t(name);
+
+    const QColor textPrimary = light ? QColor("#1a1d26") : QColor("#eef0f5");
+    const QColor textSecondary = light ? QColor("#3f4552") : QColor("#c7cbd6");
+    const QColor border = light ? dockBg.darker(112) : dockBg.lighter(160);
+
+    t.bg = light ? dockBg.darker(104) : dockBg.darker(140);
+    t.dock_bg = dockBg;
+    t.dock_border = border;
+    t.dock_header_bg = headerBg;
+    t.dock_header_text_color = textPrimary;
+
+    t.dock_content_item_bg = itemBg;
+    t.dock_content_item_header_bg = itemHeaderBg;
+    t.dock_content_item_header_text_color = textSecondary;
+    t.dock_content_item_content_bg = contentBg;
+    t.dock_content_item_content_text = textPrimary;
+
+    t.split_bg = t.bg;
+    t.split_border = border;
+    t.split_hover = accent;
+
+    QColor preview = accent;
+    preview.setAlpha(128);
+    t.split_preview = preview;
+
+    return t;
+}
+
+} // namespace
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,11 +73,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     Theme defaultTheme;
 
-    Theme testTheme("Test Theme");
-    testTheme.bg = QColor("#ffff00");
-
     registerTheme(defaultTheme);
-    registerTheme(testTheme);
+    registerTheme(makeTheme("Midnight", QColor("#0f1420"), QColor("#141a2b"), QColor("#161d30"), QColor("#1c2440"), QColor("#0c1019"), QColor("#4f8cff")));
+    registerTheme(makeTheme("Forest",   QColor("#0f1713"), QColor("#131f19"), QColor("#15211b"), QColor("#1b2b22"), QColor("#0b120e"), QColor("#34d399")));
+    registerTheme(makeTheme("Sunset",   QColor("#1a140f"), QColor("#211a13"), QColor("#231c15"), QColor("#2c2318"), QColor("#140f0b"), QColor("#ff9d4d")));
+    registerTheme(makeTheme("Crimson",  QColor("#170f13"), QColor("#1f1319"), QColor("#22141b"), QColor("#2c1a23"), QColor("#110b0e"), QColor("#fb5a72")));
+    registerTheme(makeTheme("Violet",   QColor("#140f1e"), QColor("#1a1428"), QColor("#1c1630"), QColor("#251c3c"), QColor("#0f0b18"), QColor("#a78bfa")));
+    registerTheme(makeTheme("Daylight", QColor("#f4f5f8"), QColor("#eceef3"), QColor("#ffffff"), QColor("#eef0f6"), QColor("#f7f8fb"), QColor("#4f6bed"), true));
 
     setWindowTitle(env::kProjectName);
     ui->centralwidget->setAutoFillBackground(true);
@@ -44,6 +95,10 @@ MainWindow::MainWindow(QWidget *parent)
     HeaderDockPanel* centerBox = new HeaderDockPanel(horizentalLayout);
     horizentalLayout->addWidget(centerBox);
     registerVerticalDockBox(centerBox->getDockBox());
+
+    connect(centerBox->getHeader(), &HeaderImage::contextMenuRequested, this, [this](QPoint globalPos) {
+        showHeaderContextMenu(globalPos);
+    });
 
     VerticalDockBox *rightBox = new VerticalDockBox(horizentalLayout);
     horizentalLayout->addWidget(rightBox);
@@ -165,6 +220,56 @@ void MainWindow::finishDockDrag( DockWidget* dock, QPoint pos) {
     m_draggingDock = nullptr;
 }
 
+void MainWindow::showHeaderContextMenu(QPoint globalPos)
+{
+    QMenu menu(this);
+
+    QMenu* themeMenu = menu.addMenu("Theme");
+    const Theme current = qApp->property("Theme").value<Theme>();
+    for (const Theme &t : themes)
+    {
+        QAction* action = themeMenu->addAction(t.name);
+        action->setCheckable(true);
+        action->setChecked(t.name == current.name);
+        connect(action, &QAction::triggered, this, [this, t]() {
+            setTheme(t);
+        });
+    }
+
+    QMenu* groupsMenu = menu.addMenu("Groups");
+    for (DockWidget* d : docks)
+    {
+        QAction* action = groupsMenu->addAction(d->title());
+        action->setCheckable(true);
+        action->setChecked(d->isVisible());
+        connect(action, &QAction::triggered, this, [this, d]() {
+            toggleDockVisibility(d);
+        });
+    }
+
+    menu.addSeparator();
+    QAction* closeAction = menu.addAction("Close");
+    connect(closeAction, &QAction::triggered, this, [this]() {
+        close();
+    });
+
+    menu.exec(globalPos);
+}
+
+void MainWindow::toggleDockVisibility(DockWidget* dock)
+{
+    if (!dock) return;
+
+    if (dock->isVisible())
+    {
+        dock->hideDock();
+    }
+    else
+    {
+        dock->showDock();
+    }
+}
+
 void MainWindow::setTheme(Theme theme)
 {
     QVariant v;
@@ -221,6 +326,8 @@ Dock* MainWindow::registerDock(QString nmae)
     Dock *newDock = new Dock(nmae);
     newDock->show();
 
+    docks.append(newDock);
+
     connect(newDock, &DockWidget::onDrag, this, [this, newDock](QPoint pos) {
         startDockDrag(newDock, pos);
     });
@@ -232,5 +339,6 @@ Dock* MainWindow::registerDock(QString nmae)
     connect(newDock, &DockWidget::onDrop, this, [this, newDock](QPoint pos) {
         finishDockDrag(newDock, pos);
     });
+
     return newDock;
 }

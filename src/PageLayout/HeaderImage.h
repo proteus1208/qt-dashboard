@@ -26,6 +26,9 @@ private:
 
     QPixmap m_source;
     double m_aspectRatio = 0.0;
+
+signals:
+    void contextMenuRequested(QPoint globalPos);
 };
 
 #endif // HEADERIMAGE_H

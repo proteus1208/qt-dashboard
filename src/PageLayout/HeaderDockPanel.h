@@ -15,6 +15,9 @@ public:
     VerticalDockBox * getDockBox(){
         return this->m_body;
     };
+    HeaderImage * getHeader(){
+        return this->m_header;
+    };
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
