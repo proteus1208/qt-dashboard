@@ -35,6 +35,17 @@ public:
     virtual void Init();
     void InstallChildEventFilters(QWidget* widget);
 
+protected:
+    // Init() is called from the DockWidget constructor, so a derived class's
+    // override can never run there (virtual dispatch during base
+    // construction always resolves to DockWidget::Init()). Subclasses that
+    // need their own Init() override to actually take effect should call
+    // ReInit() from their own constructor body instead, where dispatch to
+    // the most-derived Init() works correctly.
+    void ReInit();
+
+public:
+
     void AddRow();
     void AddWidget(QString title, QWidget* widget, int rate = 1);
     void detachFromDock(QPoint pos);

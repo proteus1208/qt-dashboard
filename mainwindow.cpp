@@ -4,6 +4,7 @@
 #include "PageLayout/HeaderDockPanel.h"
 #include "PageLayout/HeaderImage.h"
 #include "PageLayout/HorizentalLayout.h"
+#include "PageLayout/SampleDashboardDock.h"
 #include "PageLayout/VerticalDockBox.h"
 #include "env.h"
 
@@ -109,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
     DockWidget* dock21 = registerDock<DockWidget>("Total");
     DockWidget* dock22 = registerDock<DockWidget>("Graph");
     DockWidget* dock31 = registerDock<DockWidget>("Hello");
-    DockWidget* dock32 = registerDock<DockWidget>("Test");
+    DockWidget* dock32 = registerDock<SampleDashboardDock>("Dashboard");
 
     leftBox->insertDock(dock11);
     leftBox->insertDock(dock12);

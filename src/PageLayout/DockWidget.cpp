@@ -79,6 +79,26 @@ QString DockWidget::title() const
     return m_headerLabel->text();
 }
 
+void DockWidget::ReInit()
+{
+    QLayoutItem* child;
+    while ((child = m_contentLayout->takeAt(0)) != nullptr)
+    {
+        if (child->widget())
+        {
+            child->widget()->deleteLater();
+        }
+        delete child;
+    }
+
+    items.clear();
+    m_rows.clear();
+    m_currentRow = nullptr;
+
+    Init();
+    InstallChildEventFilters(m_content);
+}
+
 void DockWidget::hideDock()
 {
     VerticalDockBox* box = parentDockBox();
