@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QWidget>
 #include <QVector>
+#include <QPixmap>
 
 #include "BorderRateProvider.h"
 
@@ -54,6 +55,8 @@ private:
     BorderWidget *m_borderWidget = nullptr;
     HoverWidget *m_hoverWidget = nullptr;
     QPropertyAnimation *m_hoverAnimation = nullptr;
+
+    QPixmap m_background;
 };
 
 #endif

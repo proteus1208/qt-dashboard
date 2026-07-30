@@ -53,7 +53,9 @@ private:
     void finishDockDrag(DockWidget* dock, QPoint pos);
 
     void showHeaderContextMenu(QPoint globalPos);
+    void showDockContextMenu(DockWidget* dock, QPoint globalPos);
     void toggleDockVisibility(DockWidget* dock);
+    void toggleFullScreen();
 
 private:
     void setTheme(Theme);

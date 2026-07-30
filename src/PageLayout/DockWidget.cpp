@@ -9,7 +9,6 @@
 #include <QCursor>
 #include <QTimer>
 #include <QContextMenuEvent>
-#include <QMenu>
 
 constexpr int BORDER_MOUSE_AREA_WIDTH = 5;
 constexpr int INITIAL_WIDTH = 600;
@@ -199,14 +198,7 @@ bool DockWidget::eventFilter(QObject* obj, QEvent* event)
     }
     if (obj == m_header && event->type() == QEvent::ContextMenu){
         QContextMenuEvent* e = static_cast<QContextMenuEvent*>(event);
-
-        QMenu menu(this);
-        QAction* hideAction = menu.addAction("Hide");
-        connect(hideAction, &QAction::triggered, this, [this]() {
-            hideDock();
-        });
-        menu.exec(e->globalPos());
-
+        emit headerContextMenuRequested(e->globalPos());
         return true;
     }
     if (event->type() == QEvent::MouseMove)

@@ -65,6 +65,12 @@ Theme makeTheme(
     preview.setAlpha(128);
     t.split_preview = preview;
 
+    t.menu_bg = headerBg;
+    t.menu_border = border;
+    t.menu_text = textPrimary;
+    t.menu_hover_bg = accent;
+    t.menu_hover_text = QColor("#ffffff");
+
     return t;
 }
 
@@ -130,6 +136,12 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // Without this, Windows' DWM still decorates the top-level frame (DWM
+    // corner rounding + a native border) even in showFullScreen(), showing
+    // up as a thin white/rounded gap around the app. Go frameless like
+    // DockWidget's own floating windows already do.
+    setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
 
     Theme defaultTheme;
 
@@ -305,10 +317,12 @@ void MainWindow::finishDockDrag( DockWidget* dock, QPoint pos) {
 
 void MainWindow::showHeaderContextMenu(QPoint globalPos)
 {
+    const Theme current = qApp->property("Theme").value<Theme>();
+
     QMenu menu(this);
+    menu.setStyleSheet(current.menuStyleSheet());
 
     QMenu* themeMenu = menu.addMenu("Theme");
-    const Theme current = qApp->property("Theme").value<Theme>();
     for (const Theme &t : themes)
     {
         QAction* action = themeMenu->addAction(t.name);
@@ -332,9 +346,48 @@ void MainWindow::showHeaderContextMenu(QPoint globalPos)
 
     menu.addSeparator();
     QAction* closeAction = menu.addAction("Close");
-    connect(closeAction, &QAction::triggered, this, [this]() {
+    connect(closeAction, &QAction::triggered, this, [=]() {
+        qApp->quit();
         close();
     });
+
+    menu.exec(globalPos);
+}
+
+void MainWindow::showDockContextMenu(DockWidget* dock, QPoint globalPos)
+{
+    if (!dock) return;
+
+    const Theme current = qApp->property("Theme").value<Theme>();
+
+    QMenu menu(this);
+    menu.setStyleSheet(current.menuStyleSheet());
+
+    // Flat list of every dock, checkable to toggle show/hide - no submenu,
+    // just a separator marking it off from the actions below.
+    for (DockWidget* d : docks)
+    {
+        QAction* action = menu.addAction(d->title());
+        action->setCheckable(true);
+        action->setChecked(d->isVisible());
+        connect(action, &QAction::triggered, this, [this, d]() {
+            toggleDockVisibility(d);
+        });
+    }
+
+    menu.addSeparator();
+
+    QAction* hideAction = menu.addAction("Hide");
+    connect(hideAction, &QAction::triggered, this, [dock]() {
+        dock->hideDock();
+    });
+
+    // QAction* fullScreenAction = menu.addAction("Full Screen");
+    // fullScreenAction->setCheckable(true);
+    // fullScreenAction->setChecked(isFullScreen());
+    // connect(fullScreenAction, &QAction::triggered, this, [this]() {
+    //     toggleFullScreen();
+    // });
 
     menu.exec(globalPos);
 }
@@ -350,6 +403,18 @@ void MainWindow::toggleDockVisibility(DockWidget* dock)
     else
     {
         dock->showDock();
+    }
+}
+
+void MainWindow::toggleFullScreen()
+{
+    if (isFullScreen())
+    {
+        showNormal();
+    }
+    else
+    {
+        showFullScreen();
     }
 }
 
@@ -396,7 +461,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *e)
 
 void MainWindow::init()
 {
-    setTheme("Default");
+    setTheme("Professional");
 }
 
 template<class Dock>
@@ -421,6 +486,10 @@ Dock* MainWindow::registerDock(QString nmae)
 
     connect(newDock, &DockWidget::onDrop, this, [this, newDock](QPoint pos) {
         finishDockDrag(newDock, pos);
+    });
+
+    connect(newDock, &DockWidget::headerContextMenuRequested, this, [this, newDock](QPoint globalPos) {
+        showDockContextMenu(newDock, globalPos);
     });
 
     return newDock;

@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Theme>();
 
     MainWindow w;
-    w.show();
-    // w.showFullScreen();
+    w.showFullScreen();
     return QApplication::exec();
 }

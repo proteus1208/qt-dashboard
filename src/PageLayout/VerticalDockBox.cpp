@@ -326,16 +326,12 @@ void VerticalDockBox::showBorderHover(int borderIndex)
 
     m_hoverWidget->raise();
 
-    // m_hoverWidget->setOpacity(0.0);
+    // HoverWidget's paintEvent multiplies its fill color by this opacity;
+    // it defaults to 0 (invisible) and nothing else in this class ever set
+    // it, so the hover strip was rendering fully transparent despite show()
+    // being called correctly.
+    m_hoverWidget->setOpacity(1.0);
     m_hoverWidget->show();
-
-    // If you have the same animation
-    // as HorizentalLayout:
-    //
-    // m_hoverAnimation->stop();
-    // m_hoverAnimation->setStartValue(0.0);
-    // m_hoverAnimation->setEndValue(1.0);
-    // m_hoverAnimation->start();
 }
 int VerticalDockBox::borderPixelPosition(int index) const
 {
@@ -379,10 +375,10 @@ void VerticalDockBox::paintEvent(QPaintEvent *event)
 
     QPainter painter(this);
 
-    painter.fillRect(
-        rect(),
-        theme.split_bg
-        );
+    // painter.fillRect(
+    //     rect(),
+    //     theme.split_bg
+    //     );
 
     if (m_previewIndex > -1) {
         painter.setPen(Qt::NoPen);

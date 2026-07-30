@@ -15,6 +15,8 @@ HorizentalLayout::HorizentalLayout(QWidget *parent)
     setAutoFillBackground(false);
     installEventFilter(this);
 
+    m_background = QPixmap(":/App/bg1.jpg");
+
     m_borderWidget = new BorderWidget(this, this);
     m_hoverWidget = new HoverWidget(this);
 
@@ -119,6 +121,17 @@ void HorizentalLayout::paintEvent(QPaintEvent *event)
 
     QPainter painter(this);
     painter.fillRect(rect(), theme.split_bg);
+
+    if (!m_background.isNull() && width() > 0 && height() > 0) {
+        const QPixmap scaled = m_background.scaled(
+            size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation
+        );
+        const QPoint offset(
+            (scaled.width() - width()) / 2,
+            (scaled.height() - height()) / 2
+        );
+        painter.drawPixmap(rect(), scaled, QRect(offset, size()));
+    }
 }
 
 void HorizentalLayout::resizeEvent(QResizeEvent *event)

@@ -117,4 +117,5 @@ signals:
     void onDrag(QPoint);
     void onMoving(QPoint);
     void onDrop(QPoint);
+    void headerContextMenuRequested(QPoint globalPos);
 };
