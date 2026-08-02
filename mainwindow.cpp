@@ -344,6 +344,13 @@ void MainWindow::showHeaderContextMenu(QPoint globalPos)
         });
     }
 
+    QAction* addNewDockAction = menu.addAction("New Group");
+    connect(addNewDockAction, &QAction::triggered, this, [=]() {
+        DockWidget *newDock = registerDock<DockWidget>("New Dock");
+        newDock->show();
+    });
+
+
     menu.addSeparator();
     QAction* closeAction = menu.addAction("Close");
     connect(closeAction, &QAction::triggered, this, [=]() {
