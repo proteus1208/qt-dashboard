@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QCloseEvent>
 #include <QTimer>
 
 #include "src/Theme.h"
@@ -26,6 +27,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *e) override;
+    void closeEvent(QCloseEvent *e) override;
 
 private:
     void init();

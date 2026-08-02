@@ -16,6 +16,7 @@
 #include <QEvent>
 #include <QPoint>
 #include <QRandomGenerator>
+#include <QMessageBox>
 
 #include <QPushButton>
 #include <QHBoxLayout>
@@ -355,7 +356,6 @@ void MainWindow::showHeaderContextMenu(QPoint globalPos)
     QAction* closeAction = menu.addAction("Close");
     connect(closeAction, &QAction::triggered, this, [=]() {
         qApp->quit();
-        close();
     });
 
     menu.exec(globalPos);
@@ -464,6 +464,55 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *e)
 {
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Exit Application");
+    msgBox.setText("Are you sure you want to exit?");
+    msgBox.setInformativeText("Any unsaved changes may be lost.");
+    msgBox.setIcon(QMessageBox::Question);
+
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+
+    msgBox.setStyleSheet(R"(
+        QMessageBox {
+            background-color: #23272e;
+            color: #f0f0f0;
+            font-size: 13px;
+        }
+
+        QLabel {
+            color: #f0f0f0;
+            background: transparent;
+        }
+
+        QPushButton {
+            min-width: 90px;
+            min-height: 30px;
+            border-radius: 4px;
+            border: 1px solid #5a5a5a;
+            background-color: #3b4048;
+            color: white;
+            padding: 4px 12px;
+        }
+
+        QPushButton:hover {
+            background-color: #4a90e2;
+            border: 1px solid #6aa9ff;
+        }
+
+        QPushButton:pressed {
+            background-color: #3578c6;
+        }
+    )");
+
+    if (msgBox.exec() == QMessageBox::Yes)
+        event->accept();
+    else
+        event->ignore();
 }
 
 void MainWindow::init()
